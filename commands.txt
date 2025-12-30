@@ -1,0 +1,6 @@
+commands:
+npm create vite@latest
+npm install tailwindcss
+npm i @headlessui/react @reduxjs/toolkit clsx moment react-icons react-redux react-router-dom recharts sonner
+npm install react-hook-form
+npm install react-devtools
