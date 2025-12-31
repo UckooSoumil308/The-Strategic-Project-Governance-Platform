@@ -1,23 +1,35 @@
 
 import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import Textbox from "../components/Textbox";
 import Button from "../components/Buttons";
+import { setCredentials } from "../redux/slices/authSlice";
 
 const Login = () => {
-    const user = "";
+    const { user } = useSelector((state) => state.auth);
     const {
         register,
         handleSubmit,
         formState: { errors },
     } = useForm();
 
-    const navigate = useNavigate();      //useNavigate hook      
+    const navigate = useNavigate();      //useNavigate hook
+    const dispatch = useDispatch();
 
     const submitHandler = async (data) => {
         console.log("submit");
+        const userInfo = {
+            name: "Test User",
+            email: data.email,
+            isAdmin: true,
+            _id: "mock-id-123",
+        };
+        dispatch(setCredentials(userInfo));
+        navigate("/dashboard");
     };
+
     useEffect(() => {
         user && navigate("/Dashboard");    //if user is logged in then redirects to dashboard 
     }, [user]); //user dependency
@@ -32,8 +44,8 @@ const Login = () => {
                             Manage all your task in one place!
                         </span>
                         <p className='flex flex-col gap-0 md:gap-4 text-4xl md:text-6xl 2xl:text-7xl font-black text-center text-blue-700'>
-                            <span>Cloud-Based</span>
-                            <span>Task Manager</span>
+                            <span>Project Management</span>
+                            <span>Platform</span>
                         </p>
                         <div className='cell'>
                             <div className='circle rotate-in-up-left'></div>
