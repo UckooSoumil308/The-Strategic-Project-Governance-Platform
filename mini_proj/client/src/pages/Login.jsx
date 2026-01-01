@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import Textbox from "../components/Textbox";
-import Button from "../components/Buttons";
+import Button from "../components/Button";
 import { setCredentials } from "../redux/slices/authSlice";
 
 const Login = () => {

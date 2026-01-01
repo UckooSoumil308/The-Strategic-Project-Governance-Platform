@@ -44,11 +44,7 @@ const linkData = [
         link: "team",
         icon: <FaUsers />,
     },
-    {
-        label: "Status",
-        link: "status",
-        icon: <IoCheckmarkDoneOutline />,
-    },
+
     {
         label: "Trash",
         link: "trashed",
