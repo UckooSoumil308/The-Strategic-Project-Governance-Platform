@@ -41,7 +41,7 @@ const Tasks = () => {
         </div>
     ) : (
         <div className='w-full'>
-            <div className='flex items-center justify-between mb-4'>
+            <div className='flex items-center justify-between mb-8' style={{ marginBottom: '40px' }}>
                 <Title title={status ? `${status} Tasks` : "Tasks"} />
 
                 {!status && (
@@ -56,7 +56,7 @@ const Tasks = () => {
 
             <Tabs tabs={TABS} setSelected={setSelected}>
                 {!status && (
-                    <div className='w-full flex justify-between gap-4 md:gap-x-12 py-4'>
+                    <div className='w-full flex justify-between gap-10 md:gap-x-20 py-6 mb-8'>
                         <TaskTitle label='To Do' className={TASK_TYPE.todo} />
                         <TaskTitle
                             label='In Progress'

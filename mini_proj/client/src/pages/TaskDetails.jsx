@@ -93,13 +93,13 @@ const TaskDetails = () => {
     const task = tasks[3];
 
     return (
-        <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden'>
+        <div className='w-full flex flex-col gap-3 mb-4 overflow-y-hidden' style={{ gap: '24px', marginBottom: '32px' }}>
             <h1 className='text-2xl text-gray-600 font-bold'>{task?.title}</h1>
 
             <Tabs tabs={TABS} setSelected={setSelected}>
                 {selected === 0 ? (
                     <>
-                        <div className='w-full flex flex-col md:flex-row gap-5 2xl:gap-8 bg-white shadow-md p-8 overflow-y-auto'>
+                        <div className='w-full flex flex-col md:flex-row gap-5 2xl:gap-8 bg-white shadow-md p-8 overflow-y-auto' style={{ gap: '40px', padding: '32px' }}>
                             {/* LEFT */}
                             <div className='w-full md:w-1/2 space-y-8'>
                                 <div className='flex items-center gap-5'>
@@ -260,7 +260,7 @@ const Activities = ({ activity, id }) => {
     };
 
     return (
-        <div className='w-full flex gap-10 2xl:gap-20 min-h-screen px-10 py-8 bg-white shadow rounded-md justify-between overflow-y-auto'>
+        <div className='w-full flex gap-10 2xl:gap-20 min-h-screen px-10 py-8 bg-white shadow rounded-md justify-between overflow-y-auto' style={{ gap: '60px', padding: '32px 40px' }}>
             <div className='w-full md:w-1/2'>
                 <h4 className='text-gray-600 font-semibold text-lg mb-5'>Activities</h4>
 

@@ -79,7 +79,7 @@ const TaskTable = ({ tasks }) => {
     );
     return (
         <>
-            <div className='w-full md:w-2/3 bg-white px-2 md:px-6 py-6 shadow-sm rounded-xl border border-gray-100 overflow-hidden'>
+            <div className='w-full md:w-2/3 bg-white px-4 md:px-8 py-8 shadow-sm rounded-xl border border-gray-100 overflow-hidden' style={{ marginRight: '40px' }}>
                 <table className='w-full'>
                     <TableHeader />
                     <tbody className='divide-y divide-gray-100'>
@@ -134,7 +134,7 @@ const UserTable = ({ users }) => {
     );
 
     return (
-        <div className='w-full md:w-1/3 bg-white h-fit px-2 md:px-6 py-6 shadow-sm rounded-xl border border-gray-100'>
+        <div className='w-full md:w-1/3 bg-white h-fit px-4 md:px-8 py-8 shadow-sm rounded-xl border border-gray-100'>
             <table className='w-full mb-5'>
                 <TableHeader />
                 <tbody>
@@ -185,7 +185,7 @@ const Dashboard = () => {
 
     const Card = ({ label, count, bg, icon }) => {
         return (
-            <div className='w-full h-32 bg-white/50 p-6 shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex items-center justify-between'>
+            <div className='w-full h-36 bg-white/50 p-8 shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex items-center justify-between' style={{ marginBottom: '20px' }}>
                 <div className='h-full flex flex-1 flex-col justify-between'>
                     <p className='text-base text-gray-500 font-medium tracking-wide'>{label}</p>
                     <span className='text-3xl font-bold text-gray-800'>{count}</span>
@@ -194,7 +194,7 @@ const Dashboard = () => {
 
                 <div
                     className={clsx(
-                        "w-12 h-12 rounded-xl flex items-center justify-center text-white text-xl shadow-md",
+                        "w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl shadow-md",
                         bg
                     )}
                 >
@@ -205,21 +205,21 @@ const Dashboard = () => {
     };
 
     return (
-        <div className='h-full py-4 px-6 relative'>
-            <div className='grid grid-cols-1 md:grid-cols-4 gap-10 mb-6'>
+        <div className='h-full py-8 px-10 relative'>
+            <div className='grid grid-cols-1 md:grid-cols-4 gap-12 mb-10' style={{ gap: '40px', marginBottom: '50px' }}>
                 {stats.map(({ icon, bg, label, total }, index) => (
                     <Card key={index} icon={icon} bg={bg} label={label} count={total} />
                 ))}
             </div>
 
-            <div className='w-full bg-white my-16 p-4 rounded-xl shadow-sm border border-gray-100'>
-                <h4 className='text-xl text-gray-600 font-semibold'>
+            <div className='w-full bg-white my-20 p-6 rounded-xl shadow-sm border border-gray-100' style={{ marginTop: '60px', marginBottom: '60px' }}>
+                <h4 className='text-xl text-gray-600 font-semibold mb-4'>
                     Chart by Priority
                 </h4>
                 <Chart />
             </div>
 
-            <div className='w-full flex flex-col md:flex-row gap-10 2xl:gap-12 py-8'>
+            <div className='w-full flex flex-col md:flex-row gap-16 2xl:gap-20 py-10' style={{ gap: '50px', paddingTop: '40px' }}>
                 {/* /left */}
 
                 <TaskTable tasks={summary.last10Task} />

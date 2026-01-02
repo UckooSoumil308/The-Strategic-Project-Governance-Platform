@@ -23,7 +23,7 @@ function Layout() {
 
   return user ? (
     <div className='w-full h-screen flex flex-col md:flex-row'>
-      <div className='w-1/5 h-screen bg-white sticky top-0 hidden md:block'>
+      <div className='w-1/4 h-screen bg-white sticky top-0 hidden md:block'>
         <Sidebar />
       </div>
 
@@ -32,7 +32,7 @@ function Layout() {
       <div className='flex-1 overflow-y-auto'>
         <Navbar />
 
-        <div className='p-4 2xl:px-10'>
+        <div className='p-8 2xl:px-16' style={{ padding: '32px 48px' }}>
           <Outlet />
         </div>
       </div>

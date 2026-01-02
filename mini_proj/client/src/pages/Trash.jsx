@@ -55,18 +55,18 @@ const Trash = () => {
     const TableHeader = () => (
         <thead className='border-b border-gray-300'>
             <tr className='text-black  text-left'>
-                <th className='py-2'>Task Title</th>
-                <th className='py-2'>Priority</th>
-                <th className='py-2'>Stage</th>
-                <th className='py-2 line-clamp-1'>Modified On</th>
+                <th className='py-4'>Task Title</th>
+                <th className='py-4'>Priority</th>
+                <th className='py-4'>Stage</th>
+                <th className='py-4 line-clamp-1'>Modified On</th>
             </tr>
         </thead>
     );
 
     const TableRow = ({ item }) => (
         <tr className='border-b border-gray-200 text-gray-600 hover:bg-gray-400/10'>
-            <td className='py-2'>
-                <div className='flex items-center gap-2'>
+            <td className='py-4'>
+                <div className='flex items-center gap-3'>
                     <div
                         className={clsx("w-4 h-4 rounded-full", TASK_TYPE[item.stage])}
                     />
@@ -76,7 +76,7 @@ const Trash = () => {
                 </div>
             </td>
 
-            <td className='py-2 capitalize'>
+            <td className='py-4 capitalize'>
                 <div className={"flex gap-1 items-center"}>
                     <span className={clsx("text-lg", PRIOTITYSTYELS[item?.priority])}>
                         {ICONS[item?.priority]}
@@ -85,12 +85,12 @@ const Trash = () => {
                 </div>
             </td>
 
-            <td className='py-2 capitalize text-center md:text-start'>
+            <td className='py-4 capitalize text-center md:text-start'>
                 {item?.stage}
             </td>
-            <td className='py-2 text-sm'>{new Date(item?.date).toDateString()}</td>
+            <td className='py-4 text-sm'>{new Date(item?.date).toDateString()}</td>
 
-            <td className='py-2 flex gap-1 justify-end'>
+            <td className='py-4 flex gap-3 justify-end'>
                 <Button
                     icon={<MdOutlineRestore className='text-xl text-gray-500' />}
                     onClick={() => restoreClick(item._id)}
@@ -106,7 +106,7 @@ const Trash = () => {
     return (
         <>
             <div className='w-full md:px-1 px-0 mb-6'>
-                <div className='flex items-center justify-between mb-8'>
+                <div className='flex items-center justify-between mb-8' style={{ marginBottom: '40px' }}>
                     <Title title='Trashed Tasks' />
 
                     <div className='flex gap-2 md:gap-4 items-center'>
@@ -124,7 +124,7 @@ const Trash = () => {
                         />
                     </div>
                 </div>
-                <div className='bg-white px-2 md:px-6 py-4 shadow-md rounded'>
+                <div className='bg-white px-4 md:px-8 py-8 shadow-md rounded-lg' style={{ padding: '32px' }}>
                     <div className='overflow-x-auto'>
                         <table className='w-full mb-5'>
                             <TableHeader />

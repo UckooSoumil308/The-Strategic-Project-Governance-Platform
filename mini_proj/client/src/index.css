@@ -2,6 +2,22 @@
 
 @import "tailwindcss";
 
+:root {
+  /* Spacing system for consistent desktop-friendly layouts */
+  --space-xs: 0.5rem;
+  /* 8px */
+  --space-sm: 1rem;
+  /* 16px */
+  --space-md: 1.5rem;
+  /* 24px */
+  --space-lg: 2rem;
+  /* 32px */
+  --space-xl: 3rem;
+  /* 48px */
+  --space-2xl: 4rem;
+  /* 64px */
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -44,8 +60,8 @@
 }
 
 .form-container {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border-radius: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
   box-sizing: border-box;
 }
 
