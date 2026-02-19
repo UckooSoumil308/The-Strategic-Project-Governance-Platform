@@ -1,10 +1,10 @@
-import asyncHandler from "express-async-handler";
+
 import Notice from "../models/notifications.js";
 import User from "../models/users.js";
 import { createJWT } from "../utils/index.js";
 
 // POST request - login user
-const loginUser = asyncHandler(async (req, res) => {
+const loginUser = async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
@@ -35,10 +35,10 @@ const loginUser = asyncHandler(async (req, res) => {
             .status(401)
             .json({ status: false, message: "Invalid email or password" });
     }
-});
+};
 
 // POST - Register a new user
-const registerUser = asyncHandler(async (req, res) => {
+const registerUser = async (req, res) => {
     const { name, email, password, isAdmin, role, title } = req.body;
 
     const userExists = await User.findOne({ email });
@@ -69,7 +69,7 @@ const registerUser = asyncHandler(async (req, res) => {
             .status(400)
             .json({ status: false, message: "Invalid user data" });
     }
-});
+};
 
 // POST -  Logout user / clear cookie
 const logoutUser = (req, res) => {
@@ -96,7 +96,7 @@ const logoutUser = (req, res) => {
 //   }
 // });
 
-const getTeamList = asyncHandler(async (req, res) => {
+const getTeamList = async (req, res) => {
     const { search } = req.query;
     let query = {};
 
@@ -115,10 +115,10 @@ const getTeamList = asyncHandler(async (req, res) => {
     const user = await User.find(query).select("name title role email isActive");
 
     res.status(201).json(user);
-});
+};
 
 // @GET  - get user notifications
-const getNotificationsList = asyncHandler(async (req, res) => {
+const getNotificationsList = async (req, res) => {
     const { userId } = req.user;
 
     const notice = await Notice.find({
@@ -129,19 +129,19 @@ const getNotificationsList = asyncHandler(async (req, res) => {
         .sort({ _id: -1 });
 
     res.status(200).json(notice);
-});
+};
 
 // @GET  - get user task status
-const getUserTaskStatus = asyncHandler(async (req, res) => {
+const getUserTaskStatus = async (req, res) => {
     const tasks = await User.find()
         .populate("tasks", "title stage")
         .sort({ _id: -1 });
 
     res.status(200).json(tasks);
-});
+};
 
 // @GET  - get user notifications
-const markNotificationRead = asyncHandler(async (req, res) => {
+const markNotificationRead = async (req, res) => {
     try {
         const { userId } = req.user;
         const { isReadType, id } = req.query;
@@ -163,10 +163,10 @@ const markNotificationRead = asyncHandler(async (req, res) => {
     } catch (error) {
         console.log(error);
     }
-});
+};
 
 // PUT - Update user profile
-const updateUserProfile = asyncHandler(async (req, res) => {
+const updateUserProfile = async (req, res) => {
     const { userId, isAdmin } = req.user;
     const { _id } = req.body;
 
@@ -197,10 +197,10 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     } else {
         res.status(404).json({ status: false, message: "User not found" });
     }
-});
+};
 
 // PUT - active/disactivate user profile
-const activateUserProfile = asyncHandler(async (req, res) => {
+const activateUserProfile = async (req, res) => {
     const { id } = req.params;
 
     const user = await User.findById(id);
@@ -220,9 +220,9 @@ const activateUserProfile = asyncHandler(async (req, res) => {
     } else {
         res.status(404).json({ status: false, message: "User not found" });
     }
-});
+};
 
-const changeUserPassword = asyncHandler(async (req, res) => {
+const changeUserPassword = async (req, res) => {
     const { userId } = req.user;
 
     // Remove this condition
@@ -249,16 +249,16 @@ const changeUserPassword = asyncHandler(async (req, res) => {
     } else {
         res.status(404).json({ status: false, message: "User not found" });
     }
-});
+};
 
 // DELETE - delete user account
-const deleteUserProfile = asyncHandler(async (req, res) => {
+const deleteUserProfile = async (req, res) => {
     const { id } = req.params;
 
     await User.findByIdAndDelete(id);
 
     res.status(200).json({ status: true, message: "User deleted successfully" });
-});
+};
 
 export {
     activateUserProfile,

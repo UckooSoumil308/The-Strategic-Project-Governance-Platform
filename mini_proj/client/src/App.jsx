@@ -5,11 +5,13 @@ import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import Tasks from './pages/Tasks';
 import TaskDetails from './pages/TaskDetails';
+import ImpactAnalysis from './pages/ImpactAnalysis';
 import { Toaster } from "sonner";
 import Users from './pages/Users';
 import Trash from './pages/Trash';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import GovernanceReview from './pages/GovernanceReview';
 import { useRef } from 'react';
 import { setOpenSidebar } from './redux/slices/authSlice';
 import { Transition } from '@headlessui/react';
@@ -106,6 +108,8 @@ function App() {
           <Route path='/team' element={<Users />} />
           <Route path='/trashed' element={<Trash />} />
           <Route path='/task/:id' element={<TaskDetails />} />
+          <Route path='/impact-analysis' element={<ImpactAnalysis />} />
+          <Route path='/governance-review' element={<GovernanceReview />} />
         </Route>
 
         <Route path='/log-in' element={<Login />} />

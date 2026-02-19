@@ -1,18 +1,16 @@
+import { Dialog } from "@headlessui/react";
 import React from "react";
 import { useForm } from "react-hook-form";
-import { useSelector } from "react-redux";
-import ModalWrapper from "./ModalWrapper";
-import { Dialog } from "@headlessui/react";
-import Textbox from "./Textbox";
-import Loading from "./Loader";
-import Button from "./Button";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
+import { useRegisterMutation } from "../redux/slices/api/authApiSlice";
+import { useUpdateUserMutation } from "../redux/slices/api/userApiSlice";
+import { setCredentials } from "../redux/slices/authSlice";
+import { Button, Loading, ModalWrapper, Textbox } from "./";
 
 const AddUser = ({ open, setOpen, userData }) => {
     let defaultValues = userData ?? {};
     const { user } = useSelector((state) => state.auth);
-
-    const isLoading = false,
-        isUpdating = false;
 
     const {
         register,
@@ -20,7 +18,35 @@ const AddUser = ({ open, setOpen, userData }) => {
         formState: { errors },
     } = useForm({ defaultValues });
 
-    const handleOnSubmit = () => { };
+    const dispatch = useDispatch();
+
+    const [addNewUser, { isLoading }] = useRegisterMutation();
+    const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+
+    const handleOnSubmit = async (data) => {
+        try {
+            if (userData) {
+                const res = await updateUser({ ...data, _id: userData._id }).unwrap();
+                toast.success(res?.message);
+                if (userData?._id === user?._id) {
+                    dispatch(setCredentials({ ...res?.user }));
+                }
+            } else {
+                const res = await addNewUser({
+                    ...data,
+                    password: data?.email,
+                }).unwrap();
+                toast.success("New User added successfully");
+            }
+
+            setTimeout(() => {
+                setOpen(false);
+            }, 1500);
+        } catch (err) {
+            console.log(err);
+            toast.error(err?.data?.message || err.error);
+        }
+    };
 
     return (
         <>

@@ -1,8 +1,8 @@
-import asyncHandler from "express-async-handler";
+
 import jwt from "jsonwebtoken";
 import User from "../models/users.js";
 
-const protectRoute = asyncHandler(async (req, res, next) => {
+const protectRoute = async (req, res, next) => {
     let token = req.cookies.token;
 
     if (token) {
@@ -31,7 +31,7 @@ const protectRoute = asyncHandler(async (req, res, next) => {
             .status(401)
             .json({ status: false, message: "Not authorized. Try login again." });
     }
-});
+};
 
 const isAdminRoute = (req, res, next) => {
     if (req.user && req.user.isAdmin) {

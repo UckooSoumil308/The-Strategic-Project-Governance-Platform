@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { BiMessageAltDetail } from "react-icons/bi";
 import {
     MdAttachFile,
@@ -13,6 +14,8 @@ import { FaList } from "react-icons/fa";
 import UserInfo from "../UserInfo";
 import Button from "../Button";
 import ConfirmatioDialog from "../Dialogs";
+import AddTask from "./AddTask";
+import { useTrashTastMutation } from "../../redux/slices/api/taskApiSlice";
 
 const ICONS = {
     high: <MdKeyboardDoubleArrowUp />,
@@ -23,13 +26,31 @@ const ICONS = {
 const Table = ({ tasks }) => {
     const [openDialog, setOpenDialog] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [openEdit, setOpenEdit] = useState(false);
+    const [editTask, setEditTask] = useState(null);
+
+    const [trashTask] = useTrashTastMutation();
 
     const deleteClicks = (id) => {
         setSelected(id);
         setOpenDialog(true);
     };
 
-    const deleteHandler = () => { };
+    const editClicks = (task) => {
+        setEditTask(task);
+        setOpenEdit(true);
+    };
+
+    const deleteHandler = async () => {
+        try {
+            const res = await trashTask({ id: selected }).unwrap();
+            toast.success(res?.message || "Task trashed successfully");
+            setOpenDialog(false);
+        } catch (err) {
+            console.log(err);
+            toast.error(err?.data?.message || err.error);
+        }
+    };
 
     const TableHeader = () => (
         <thead className='w-full border-b border-gray-300'>
@@ -50,9 +71,9 @@ const Table = ({ tasks }) => {
                     <div
                         className={clsx("w-4 h-4 rounded-full", TASK_TYPE[task.stage])}
                     />
-                    <p className='w-full line-clamp-2 text-base text-black'>
+                    <Link to={`/task/${task._id}`} className='w-full line-clamp-2 text-base text-black hover:text-blue-600 hover:underline cursor-pointer'>
                         {task?.title}
-                    </p>
+                    </Link>
                 </div>
             </td>
 
@@ -111,6 +132,7 @@ const Table = ({ tasks }) => {
                     className='text-blue-600 hover:text-blue-500 sm:px-0 text-sm md:text-base'
                     label='Edit'
                     type='button'
+                    onClick={() => editClicks(task)}
                 />
 
                 <Button
@@ -137,7 +159,12 @@ const Table = ({ tasks }) => {
                 </div>
             </div>
 
-            {/* TODO */}
+            <AddTask
+                open={openEdit}
+                setOpen={setOpenEdit}
+                task={editTask}
+            />
+
             <ConfirmatioDialog
                 open={openDialog}
                 setOpen={setOpenDialog}

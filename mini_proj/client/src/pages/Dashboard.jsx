@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from "react-router-dom";
 import {
     MdAdminPanelSettings,
     MdKeyboardArrowDown,
@@ -9,11 +10,12 @@ import { LuClipboardPen } from "react-icons/lu";
 import { FaNewspaper, FaUsers } from "react-icons/fa";
 import { FaArrowsToDot } from "react-icons/fa6";
 import moment from "moment";
-import { summary } from "../assets/data";
 import clsx from "clsx";
 import { Chart } from "../components/Chart";
 import { BGS, PRIOTITYSTYELS, TASK_TYPE, getInitials } from "../utils";
 import UserInfo from "../components/UserInfo";
+import Loading from "../components/Loader";
+import { useGetDasboardStatsQuery } from "../redux/slices/api/taskApiSlice";
 
 
 const TaskTable = ({ tasks }) => {
@@ -42,7 +44,10 @@ const TaskTable = ({ tasks }) => {
                         className={clsx("w-3 h-3 rounded-full shadow-sm", TASK_TYPE[task.stage])}
                     />
 
-                    <p className='text-base text-gray-800 font-medium'>{task.title}</p>
+
+                    <Link to={`/task/${task._id}`} className='text-base text-gray-800 font-medium hover:text-blue-600 hover:underline truncate block'>
+                        {task.title}
+                    </Link>
                 </div>
             </td>
 
@@ -148,16 +153,26 @@ const UserTable = ({ users }) => {
 };
 
 const Dashboard = () => {
+    const { data, isLoading } = useGetDasboardStatsQuery();
 
-    const totals = summary.tasks;
+    if (isLoading)
+        return (
+            <div className='py-10'>
+                <Loading />
+            </div>
+        );
+
+    const totals = data?.tasks || {};
 
     const stats = [
         {
             _id: "1",
             label: "TOTAL TASK",
-            total: summary?.totalTasks || 0,
+            total: data?.totalTasks || 0,
             icon: <FaNewspaper />,
             bg: "bg-[#1d4ed8]",
+            tooltip: "Total number of tasks in the workspace",
+            link: "/tasks",
         },
         {
             _id: "2",
@@ -165,6 +180,8 @@ const Dashboard = () => {
             total: totals["completed"] || 0,
             icon: <MdAdminPanelSettings />,
             bg: "bg-[#0f766e]",
+            tooltip: "View all completed tasks",
+            link: "/completed/completed",
         },
         {
             _id: "3",
@@ -172,20 +189,28 @@ const Dashboard = () => {
             total: totals["in progress"] || 0,
             icon: <LuClipboardPen />,
             bg: "bg-[#f59e0b]",
+            tooltip: "View tasks currently in progress",
+            link: "/in-progress/in progress",
         },
         {
             _id: "4",
             label: "TODOS",
-            total: totals["todo"],
+            total: totals["todo"] || 0,
             icon: <FaArrowsToDot />,
-            bg: "bg-[#be185d]" || 0,
+            bg: "bg-[#be185d]",
+            tooltip: "View tasks waiting to be started",
+            link: "/todo/todo",
         },
     ];
 
 
-    const Card = ({ label, count, bg, icon }) => {
-        return (
-            <div className='w-full h-36 bg-white/50 p-8 shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex items-center justify-between' style={{ marginBottom: '20px' }}>
+    const Card = ({ label, count, bg, icon, link, tooltip }) => {
+        const CardContent = (
+            <div
+                className='w-full h-36 bg-white/50 p-8 shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex items-center justify-between cursor-pointer'
+                style={{ marginBottom: '20px' }}
+                title={tooltip} // Tooltip on hover
+            >
                 <div className='h-full flex flex-1 flex-col justify-between'>
                     <p className='text-base text-gray-500 font-medium tracking-wide'>{label}</p>
                     <span className='text-3xl font-bold text-gray-800'>{count}</span>
@@ -202,13 +227,15 @@ const Dashboard = () => {
                 </div>
             </div>
         );
+
+        return link ? <Link to={link}>{CardContent}</Link> : CardContent;
     };
 
     return (
         <div className='h-full py-8 px-10 relative'>
             <div className='grid grid-cols-1 md:grid-cols-4 gap-12 mb-10' style={{ gap: '40px', marginBottom: '50px' }}>
-                {stats.map(({ icon, bg, label, total }, index) => (
-                    <Card key={index} icon={icon} bg={bg} label={label} count={total} />
+                {stats.map(({ icon, bg, label, total, link, tooltip }, index) => (
+                    <Card key={index} icon={icon} bg={bg} label={label} count={total} link={link} tooltip={tooltip} />
                 ))}
             </div>
 
@@ -216,17 +243,17 @@ const Dashboard = () => {
                 <h4 className='text-xl text-gray-600 font-semibold mb-4'>
                     Chart by Priority
                 </h4>
-                <Chart />
+                <Chart data={data?.graphData} />
             </div>
 
             <div className='w-full flex flex-col md:flex-row gap-16 2xl:gap-20 py-10' style={{ gap: '50px', paddingTop: '40px' }}>
                 {/* /left */}
 
-                <TaskTable tasks={summary.last10Task} />
+                <TaskTable tasks={data?.last10Task} />
 
                 {/* /right */}
 
-                <UserTable users={summary.users} />
+                <UserTable users={data?.users} />
             </div>
         </div>
     );

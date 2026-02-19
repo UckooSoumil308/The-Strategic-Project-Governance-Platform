@@ -1,9 +1,10 @@
-import asyncHandler from "express-async-handler";
+
 import Notice from "../models/notifications.js";
 import Task from "../models/tasks.js";
 import User from "../models/users.js";
+import { evaluateTask } from "../utils/GovernanceAgent.js";
 
-const createTask = asyncHandler(async (req, res) => {
+const createTask = async (req, res) => {
     try {
         const { userId } = req.user;
         const { title, team, stage, date, priority, assets, links, description } =
@@ -32,6 +33,63 @@ const createTask = asyncHandler(async (req, res) => {
             newLinks = links?.split(",");
         }
 
+        // ── Governance Check: AI Judge ──────────────────────────
+        // 1. Calculate Workload Context
+        let workloadContext = "";
+        if (team?.length > 0) {
+            const teamWorkload = await Promise.all(
+                team.map(async (memberId) => {
+                    const count = await Task.countDocuments({
+                        team: memberId,
+                        stage: { $in: ["todo", "in progress"] },
+                        isTrashed: false,
+                    });
+                    const user = await User.findById(memberId).select("name");
+                    return { name: user?.name || "Unknown", count };
+                })
+            );
+            workloadContext = teamWorkload
+                .map((w) => `${w.name} has ${w.count} active tasks.`)
+                .join(" ");
+        }
+
+        // 2. Evaluate with Context
+        const governance = await evaluateTask({
+            title,
+            description,
+            priority,
+            stage,
+            workloadContext
+        });
+
+        if (!governance.approved) {
+            // Save the task for audit trail, but mark as blocked
+            const blockedTask = await Task.create({
+                title,
+                team,
+                stage: stage.toLowerCase(),
+                date,
+                priority: priority.toLowerCase(),
+                assets,
+                activities: activity,
+                links: newLinks || [],
+                description,
+                governanceStatus: "pending_governance_review",
+                governanceReason: governance.reason,
+            });
+
+            return res.status(403).json({
+                status: false,
+                governance: {
+                    approved: false,
+                    reason: governance.reason,
+                },
+                task: blockedTask,
+                message: "Task blocked by AI Governance Judge — strategic drift detected.",
+            });
+        }
+        // ── End Governance Check ─────────────────────────────────
+
         const task = await Task.create({
             title,
             team,
@@ -42,6 +100,8 @@ const createTask = asyncHandler(async (req, res) => {
             activities: activity,
             links: newLinks || [],
             description,
+            governanceStatus: "approved",
+            governanceReason: governance.reason,
         });
 
         await Notice.create({
@@ -69,9 +129,9 @@ const createTask = asyncHandler(async (req, res) => {
         console.log(error);
         return res.status(500).json({ status: false, message: error.message });
     }
-});
+};
 
-const duplicateTask = asyncHandler(async (req, res) => {
+const duplicateTask = async (req, res) => {
     try {
         const { id } = req.params;
         const { userId } = req.user;
@@ -80,7 +140,7 @@ const duplicateTask = asyncHandler(async (req, res) => {
 
         //alert users of the task
         let text = "New task has been assigned to you";
-        if (team.team?.length > 1) {
+        if (task.team?.length > 1) {
             text = text + ` and ${task.team?.length - 1} others.`;
         }
 
@@ -125,9 +185,9 @@ const duplicateTask = asyncHandler(async (req, res) => {
     } catch (error) {
         return res.status(500).json({ status: false, message: error.message });
     }
-});
+};
 
-const updateTask = asyncHandler(async (req, res) => {
+const updateTask = async (req, res) => {
     const { id } = req.params;
     const { title, date, team, stage, priority, assets, links, description } =
         req.body;
@@ -154,13 +214,13 @@ const updateTask = asyncHandler(async (req, res) => {
 
         res
             .status(200)
-            .json({ status: true, message: "Task duplicated successfully." });
+            .json({ status: true, message: "Task updated successfully." });
     } catch (error) {
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
 
-const updateTaskStage = asyncHandler(async (req, res) => {
+const updateTaskStage = async (req, res) => {
     try {
         const { id } = req.params;
         const { stage } = req.body;
@@ -177,9 +237,9 @@ const updateTaskStage = asyncHandler(async (req, res) => {
     } catch (error) {
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
 
-const updateSubTaskStage = asyncHandler(async (req, res) => {
+const updateSubTaskStage = async (req, res) => {
     try {
         const { taskId, subTaskId } = req.params;
         const { status } = req.body;
@@ -206,9 +266,9 @@ const updateSubTaskStage = asyncHandler(async (req, res) => {
         console.log(error);
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
 
-const createSubTask = asyncHandler(async (req, res) => {
+const createSubTask = async (req, res) => {
     const { title, tag, date } = req.body;
     const { id } = req.params;
 
@@ -232,9 +292,9 @@ const createSubTask = asyncHandler(async (req, res) => {
     } catch (error) {
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
 
-const getTasks = asyncHandler(async (req, res) => {
+const getTasks = async (req, res) => {
     const { userId, isAdmin } = req.user;
     const { stage, isTrashed, search } = req.query;
 
@@ -271,9 +331,9 @@ const getTasks = asyncHandler(async (req, res) => {
         status: true,
         tasks,
     });
-});
+};
 
-const getTask = asyncHandler(async (req, res) => {
+const getTask = async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -296,9 +356,9 @@ const getTask = asyncHandler(async (req, res) => {
         console.log(error);
         throw new Error("Failed to fetch task", error);
     }
-});
+};
 
-const postTaskActivity = asyncHandler(async (req, res) => {
+const postTaskActivity = async (req, res) => {
     const { id } = req.params;
     const { userId } = req.user;
     const { type, activity } = req.body;
@@ -321,9 +381,9 @@ const postTaskActivity = asyncHandler(async (req, res) => {
     } catch (error) {
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
 
-const trashTask = asyncHandler(async (req, res) => {
+const trashTask = async (req, res) => {
     const { id } = req.params;
 
     try {
@@ -340,9 +400,9 @@ const trashTask = asyncHandler(async (req, res) => {
     } catch (error) {
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
 
-const deleteRestoreTask = asyncHandler(async (req, res) => {
+const deleteRestoreTask = async (req, res) => {
     try {
         const { id } = req.params;
         const { actionType } = req.query;
@@ -371,9 +431,9 @@ const deleteRestoreTask = asyncHandler(async (req, res) => {
     } catch (error) {
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
 
-const dashboardStatistics = asyncHandler(async (req, res) => {
+const dashboardStatistics = async (req, res) => {
     try {
         const { userId, isAdmin } = req.user;
 
@@ -443,17 +503,120 @@ const dashboardStatistics = asyncHandler(async (req, res) => {
         console.log(error);
         return res.status(400).json({ status: false, message: error.message });
     }
-});
+};
+
+const deleteAsset = async (req, res) => {
+    const { id } = req.params;
+    const { assetUrl } = req.body;
+
+    try {
+        const task = await Task.findById(id);
+
+        if (!task) {
+            return res.status(404).json({ status: false, message: "Task not found." });
+        }
+
+        task.assets = task.assets.filter((url) => url !== assetUrl);
+        await task.save();
+
+        res.status(200).json({ status: true, message: "Asset deleted successfully." });
+    } catch (error) {
+        return res.status(400).json({ status: false, message: error.message });
+    }
+};
+
+const governanceStats = async (req, res) => {
+    try {
+        const totalTasks = await Task.countDocuments({ isTrashed: false });
+        const approvedTasks = await Task.countDocuments({
+            isTrashed: false,
+            governanceStatus: "approved",
+        });
+        const blockedTasks = await Task.countDocuments({
+            isTrashed: false,
+            governanceStatus: { $in: ["pending_governance_review", "blocked"] },
+        });
+
+        const alignmentPercent =
+            totalTasks > 0 ? Math.round((approvedTasks / totalTasks) * 100) : 100;
+
+        res.status(200).json({
+            status: true,
+            totalTasks,
+            approvedTasks,
+            blockedTasks,
+            alignmentPercent,
+        });
+    } catch (error) {
+        return res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+const getGovernanceTasks = async (req, res) => {
+    try {
+        const tasks = await Task.find({
+            isTrashed: false,
+            governanceStatus: "pending_governance_review",
+        })
+            .populate({
+                path: "team",
+                select: "name title email",
+            })
+            .sort({ _id: -1 });
+
+        res.status(200).json({
+            status: true,
+            tasks,
+        });
+    } catch (error) {
+        return res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+const reviewGovernanceTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body; // "approved" or "blocked"
+
+        if (!["approved", "blocked"].includes(status)) {
+            return res.status(400).json({ status: false, message: "Invalid status." });
+        }
+
+        const task = await Task.findById(id);
+        if (!task) {
+            return res.status(404).json({ status: false, message: "Task not found." });
+        }
+
+        task.governanceStatus = status;
+
+        // If blocked, we might want to trash it or just leave it as blocked
+        // For now, let's just set the status. 
+        // If the admin wants to trash, they can use the trash button.
+
+        await task.save();
+
+        res.status(200).json({
+            status: true,
+            message: `Task ${status} successfully.`,
+        });
+    } catch (error) {
+        return res.status(500).json({ status: false, message: error.message });
+    }
+};
 
 export {
     createSubTask,
     createTask,
     dashboardStatistics,
+    deleteAsset,
     deleteRestoreTask,
     duplicateTask,
+    getGovernanceTasks,
     getTask,
     getTasks,
+    governanceStats,
     postTaskActivity,
+    reviewGovernanceTask,
     trashTask,
     updateSubTaskStage,
     updateTask,
