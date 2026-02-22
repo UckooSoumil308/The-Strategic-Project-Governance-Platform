@@ -9,8 +9,8 @@ const userSchema = new Schema(
         email: { type: String, required: true, unique: true },
         password: { type: String, required: true },
         isAdmin: { type: Boolean, required: true, default: false },
-        tasks: [{ type: Schema.Types.ObjectId, ref: "Task" }],
         isActive: { type: Boolean, required: true, default: true },
+        organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true },
     },
     { timestamps: true }
 );

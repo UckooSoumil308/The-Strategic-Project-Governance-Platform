@@ -91,37 +91,37 @@ const Sidebar = () => {
                 onClick={closeSidebar}
                 to={el.link}
                 className={clsx(
-                    "w-fult lg:w-3/4 flex gap-2 px-3 py-2 rounded-full items-center text-gray-800 dark:text-gray-400 text-base hover:bg-[#2564ed2d]",
-                    path === el.link.split("/")[0] ? "bg-blue-700 text-white" : ""
+                    "w-full lg:w-3/4 flex gap-3 px-4 py-2.5 rounded-2xl items-center text-gray-700 dark:text-gray-300 text-base font-medium transition-all duration-300 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-500/10 dark:hover:text-indigo-400",
+                    path === el.link.split("/")[0] ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 dark:shadow-none hover:bg-indigo-700 hover:text-white" : ""
                 )}
                 title={el.tooltip}
             >
-                {el.icon}
-                <span className='hover:text-[#2564ed]'>{el.label}</span>
+                <div className='text-lg'>{el.icon}</div>
+                <span className=''>{el.label}</span>
             </Link>
         );
     };
     return (
-        <div className='w-full h-full flex flex-col gap-8 p-8' style={{ padding: '32px' }}>
-            <h1 className='flex gap-2 items-center'>
-                <p className='bg-blue-600 p-2 rounded-full'>
+        <div className='w-full h-full flex flex-col gap-6 p-6' style={{ padding: '24px' }}>
+            <h1 className='flex gap-3 items-center px-4'>
+                <p className='bg-gradient-to-br from-indigo-500 to-violet-600 p-2.5 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none'>
                     <MdOutlineAddTask className='text-white text-2xl font-black' />
                 </p>
-                <span className='text-2xl font-bold text-black dark:text-white'>
+                <span className='text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-gray-800 to-gray-600 dark:from-white dark:to-gray-300 tracking-tight'>
                     TaskEase
                 </span>
             </h1>
 
-            <div className='flex-1 flex flex-col gap-y-8 py-8' style={{ gap: '28px', paddingTop: '32px' }}>
+            <div className='flex-1 flex flex-col gap-y-2 py-6' style={{ gap: '8px', paddingTop: '24px' }}>
                 {sidebarLinks.map((link) => (
                     <NavLink el={link} key={link.label} />
                 ))}
             </div>
 
-            <div className=''>
-                <button className='w-full flex gap-2 p-2 items-center text-lg text-gray-800 dark:text-white'>
-                    <MdSettings />
-                    <span>Settings</span>
+            <div className='px-4'>
+                <button className='w-full flex gap-3 px-4 py-3 rounded-2xl items-center text-base text-gray-700 dark:text-gray-300 transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50'>
+                    <MdSettings className="text-xl" />
+                    <span className="font-medium">Settings</span>
                 </button>
             </div>
         </div>

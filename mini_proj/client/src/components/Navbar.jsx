@@ -26,7 +26,7 @@ const Navbar = () => {
     };
 
     return (
-        <div className='flex justify-between items-center bg-white dark:bg-[#1f1f1f] px-4 py-3 2xl:py-4 sticky z-10 top-0'>
+        <div className='flex justify-between items-center bg-white/80 dark:bg-[#1f1f1f]/80 backdrop-blur-md px-6 py-4 sticky z-10 top-0 border-b border-gray-100 dark:border-gray-800 shadow-sm'>
             <div className='flex gap-4'>
                 <div className=''>
                     <button
@@ -40,16 +40,16 @@ const Navbar = () => {
                 {location?.pathname !== "/dashboard" && (
                     <form
                         onSubmit={handleSubmit}
-                        className='w-64 2xl:w-[400px] flex items-center py-2 px-3 gap-2 rounded-full bg-[#f3f4f6] dark:bg-[#1c1c1c]'
+                        className='w-64 2xl:w-[400px] flex items-center py-2.5 px-4 gap-3 rounded-full bg-gray-50 border border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 hover:bg-white focus-within:bg-white hover:border-indigo-300 focus-within:border-indigo-500 focus-within:shadow-md focus-within:shadow-indigo-100 dark:hover:bg-gray-800 dark:focus-within:bg-gray-800 dark:focus-within:shadow-none transition-all duration-300 group'
                     >
-                        <MdOutlineSearch className='text-gray-500 text-xl' />
+                        <MdOutlineSearch className='text-gray-400 group-focus-within:text-indigo-500 text-xl transition-colors duration-300' />
 
                         <input
                             onChange={(e) => setSearchTerm(e.target.value)}
                             value={searchTerm}
                             type='text'
-                            placeholder='Search...'
-                            className='flex-1 outline-none bg-transparent placeholder:text-gray-500 text-gray-800'
+                            placeholder='Search anything...'
+                            className='flex-1 outline-none bg-transparent placeholder:text-gray-400 text-gray-700 dark:text-gray-200 font-medium'
                         />
                     </form>
                 )}

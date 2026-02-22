@@ -1,6 +1,8 @@
-
+import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import Notice from "../models/notifications.js";
 import User from "../models/users.js";
+import Organization from "../models/organization.js";
 import { createJWT } from "../utils/index.js";
 
 // POST request - login user
@@ -29,7 +31,7 @@ const loginUser = async (req, res) => {
 
         user.password = undefined;
 
-        res.status(200).json(user);
+        res.status(200).json({ ...user._doc, organizationId: user.organizationId });
     } else {
         return res
             .status(401)
@@ -39,35 +41,85 @@ const loginUser = async (req, res) => {
 
 // POST - Register a new user
 const registerUser = async (req, res) => {
-    const { name, email, password, isAdmin, role, title } = req.body;
+    try {
+        const { name, email, password, isAdmin, role, title } = req.body;
 
-    const userExists = await User.findOne({ email });
+        const userExists = await User.findOne({ email });
 
-    if (userExists) {
-        return res
-            .status(400)
-            .json({ status: false, message: "Email address already exists" });
-    }
+        if (userExists) {
+            return res
+                .status(400)
+                .json({ status: false, message: "Email address already exists" });
+        }
 
-    const user = await User.create({
-        name,
-        email,
-        password,
-        isAdmin,
-        role,
-        title,
-    });
+        let targetOrgId = null;
+        const newUserId = new mongoose.Types.ObjectId();
 
-    if (user) {
-        isAdmin ? createJWT(res, user._id) : null;
+        if (isAdmin) {
+            // If an Admin registers, create a new Organization for them
+            // Pre-generating the User ID solves the circular validation dependency
+            const org = await Organization.create({
+                name: `${name}'s Organization`,
+                owner: newUserId
+            });
+            targetOrgId = org._id;
+        } else {
+            // If a standard user is created, the request must come from a logged-in Admin.
+            const token = req.cookies.token;
+            if (!token) {
+                return res.status(401).json({ status: false, message: "Unauthorized. Required admin token to create standard user." });
+            }
+            try {
+                const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+                const creator = await User.findById(decodedToken.userId).select("organizationId isAdmin name");
+                if (!creator || !creator.isAdmin) {
+                    return res.status(401).json({ status: false, message: "Unauthorized. Only admins can create standard members." });
+                }
 
-        user.password = undefined;
+                // Legacy Admin Support: Lazily create an organization if the admin doesn't have one
+                if (!creator.organizationId) {
+                    const org = await Organization.create({
+                        name: `${creator.name}'s Organization`,
+                        owner: creator._id
+                    });
+                    creator.organizationId = org._id;
+                    await creator.save({ validateBeforeSave: false }); // Bypass any other strict validations
+                    targetOrgId = org._id;
+                } else {
+                    targetOrgId = creator.organizationId;
+                }
+            } catch (error) {
+                return res.status(401).json({ status: false, message: "Invalid token." });
+            }
+        }
 
-        res.status(201).json(user);
-    } else {
-        return res
-            .status(400)
-            .json({ status: false, message: "Invalid user data" });
+        const user = await User.create({
+            _id: newUserId,
+            name,
+            email,
+            password,
+            isAdmin,
+            role,
+            title,
+            organizationId: targetOrgId,
+        });
+
+        if (user) {
+            if (isAdmin) {
+                createJWT(res, user._id);
+            }
+
+            user.password = undefined;
+
+            res.status(201).json(user);
+        } else {
+            return res
+                .status(400)
+                .json({ status: false, message: "Invalid user data" });
+        }
+    } catch (error) {
+        console.error("Register Error:", error);
+        return res.status(500).json({ status: false, message: error.message });
     }
 };
 
@@ -98,7 +150,9 @@ const logoutUser = (req, res) => {
 
 const getTeamList = async (req, res) => {
     const { search } = req.query;
-    let query = {};
+    const { organizationId } = req.user;
+
+    let query = { organizationId };
 
     if (search) {
         const searchQuery = {
@@ -131,9 +185,9 @@ const getNotificationsList = async (req, res) => {
     res.status(200).json(notice);
 };
 
-// @GET  - get user task status
 const getUserTaskStatus = async (req, res) => {
-    const tasks = await User.find()
+    const { organizationId } = req.user;
+    const tasks = await User.find({ organizationId })
         .populate("tasks", "title stage")
         .sort({ _id: -1 });
 
@@ -177,19 +231,23 @@ const updateUserProfile = async (req, res) => {
                 ? _id
                 : userId;
 
-    const user = await User.findById(id);
+    const updateData = {};
+    if (req.body.name) updateData.name = req.body.name;
+    // if (req.body.email) updateData.email = req.body.email; // Email updates typically need extra verification
+    if (req.body.title) updateData.title = req.body.title;
+    if (req.body.role) updateData.role = req.body.role;
 
-    if (user) {
-        user.name = req.body.name || user.name;
-        // user.email = req.body.email || user.email;
-        user.title = req.body.title || user.title;
-        user.role = req.body.role || user.role;
+    // Use findByIdAndUpdate to bypass full document validation on legacy users missing organizationId
+    const updatedUser = await User.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true, runValidators: true } // runValidators only applies to modified paths in an update
+    );
 
-        const updatedUser = await user.save();
+    if (updatedUser) {
+        updatedUser.password = undefined;
 
-        user.password = undefined;
-
-        res.status(201).json({
+        res.status(200).json({
             status: true,
             message: "Profile Updated Successfully.",
             user: updatedUser,
@@ -238,7 +296,7 @@ const changeUserPassword = async (req, res) => {
     if (user) {
         user.password = req.body.password;
 
-        await user.save();
+        await user.save({ validateBeforeSave: false }); // Bypass strict validation for legacy users missing organizationId but still trigger the pre-save password hash hook
 
         user.password = undefined;
 

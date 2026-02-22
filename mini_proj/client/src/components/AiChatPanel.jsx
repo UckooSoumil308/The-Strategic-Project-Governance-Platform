@@ -177,38 +177,39 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
 
     return (
         <div style={isOpen ? undefined : { display: "none" }}>
-            <div className="fixed inset-0 z-[90] flex justify-end">
+            <div className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6">
                 {/* Backdrop */}
                 <div
-                    className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                    className="absolute inset-0 bg-gray-900/80 backdrop-blur-md transition-opacity duration-300"
                     onClick={onMinimize}
                 />
 
                 {/* Panel */}
-                <div className="relative w-full max-w-lg h-full bg-white shadow-2xl flex flex-col animate-slide-in-right">
+                <div className="relative w-full max-w-3xl h-[85vh] min-h-[550px] bg-[#fdfdfd]/90 backdrop-blur-3xl shadow-[0_30px_100px_-20px_rgba(17,24,39,0.5),_0_0_0_1px_rgba(255,255,255,0.4)] flex flex-col rounded-[2.5rem] border border-white/60 overflow-hidden transform transition-all duration-300">
                     {/* ── Header ──────────────────────────────────── */}
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 bg-gradient-to-r from-violet-600 to-indigo-600">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center">
-                                <FaRobot className="text-white" size={18} />
+                    <div className="flex items-center justify-between px-8 py-6 border-b border-indigo-500/20 bg-gradient-to-br from-indigo-900 via-indigo-800 to-violet-900 shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-white/10 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3"></div>
+                        <div className="flex items-center gap-5 relative">
+                            <div className="w-12 h-12 rounded-[1.25rem] bg-white/10 backdrop-blur-md flex items-center justify-center shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] border border-white/20 relative z-10 transition-transform hover:scale-110 duration-500 hover:bg-white/20">
+                                <FaRobot className="text-white drop-shadow-md" size={24} />
                             </div>
-                            <div>
-                                <h3 className="font-bold text-white text-lg leading-tight">
+                            <div className="relative z-10">
+                                <h3 className="font-extrabold text-white text-[19px] tracking-wide leading-tight outline-none drop-shadow-sm">
                                     AI Document Review
                                 </h3>
-                                <p className="text-violet-200 text-xs">
+                                <p className="text-indigo-200 text-xs mt-1 font-semibold tracking-widest uppercase opacity-80">
                                     Powered by Gemini AI
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 relative z-20">
                             {/* Refresh */}
                             {phase === PHASE_CHAT && (
                                 <button
                                     onClick={handleRefresh}
                                     title="New session"
-                                    className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all"
+                                    className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2.5 transition-all outline-none focus:ring-2 focus:ring-white/50"
                                 >
                                     <MdRefresh size={20} />
                                 </button>
@@ -217,7 +218,7 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                             <button
                                 onClick={onMinimize}
                                 title="Minimize — keep chat alive"
-                                className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all"
+                                className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2.5 transition-all outline-none focus:ring-2 focus:ring-white/50"
                             >
                                 <MdMinimize size={20} />
                             </button>
@@ -225,7 +226,7 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                             <button
                                 onClick={handleClose}
                                 title="Close — end session"
-                                className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2 transition-all"
+                                className="text-white/80 hover:text-white hover:bg-white/20 rounded-full p-2.5 transition-all outline-none focus:ring-2 focus:ring-white/50"
                             >
                                 <MdClose size={22} />
                             </button>
@@ -235,20 +236,21 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                     {/* ── Phase: File Picker ──────────────────────── */}
                     {phase === PHASE_PICKER && (
                         <div className="flex-1 flex flex-col overflow-hidden">
-                            <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
-                                <div className="flex items-center justify-between mb-1">
-                                    <p className="text-sm font-semibold text-gray-700">
-                                        Select files to review
+                            <div className="px-8 py-5 border-b border-gray-100 bg-white/40 backdrop-blur-md z-10 shadow-sm relative">
+                                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-200/50 to-transparent"></div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <p className="text-[13px] font-bold text-gray-800 uppercase tracking-widest">
+                                        Select context files
                                     </p>
                                     <button
                                         onClick={toggleAll}
-                                        className="flex items-center gap-1 text-xs font-medium text-violet-600 hover:text-violet-800 transition-colors"
+                                        className="flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors uppercase tracking-wider"
                                     >
                                         <MdSelectAll size={16} />
                                         {selectedFiles.length === assets.length ? "Deselect All" : "Select All"}
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-400">
+                                <p className="text-xs font-medium text-gray-400">
                                     {selectedFiles.length} of {assets.length} selected
                                 </p>
                             </div>
@@ -289,14 +291,17 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                             </div>
 
                             {/* Start Review button */}
-                            <div className="px-5 py-4 border-t border-gray-200 bg-white">
+                            <div className="px-8 py-6 border-t border-gray-100 bg-white/60 backdrop-blur-md z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
                                 <button
                                     onClick={startReview}
                                     disabled={selectedFiles.length === 0}
-                                    className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:shadow-lg hover:shadow-violet-300 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none flex items-center justify-center gap-2"
+                                    className="relative w-full py-4 rounded-2xl font-bold text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:shadow-[0_8px_25px_rgba(79,70,229,0.3)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none flex items-center justify-center gap-3 overflow-hidden group"
                                 >
-                                    <FaRobot size={16} />
-                                    Start Review ({selectedFiles.length} file{selectedFiles.length !== 1 ? "s" : ""})
+                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out"></div>
+                                    <FaRobot size={18} className="relative z-10" />
+                                    <span className="relative z-10 text-[15px] tracking-wide">
+                                        Begin Analysis ({selectedFiles.length} file{selectedFiles.length !== 1 ? "s" : ""})
+                                    </span>
                                 </button>
                             </div>
                         </div>
@@ -304,23 +309,38 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
 
                     {/* ── Phase: Loading ──────────────────────────── */}
                     {phase === PHASE_LOADING && (
-                        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
-                            <div className="relative">
-                                <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center">
-                                    <FaRobot className="text-violet-600 animate-pulse" size={28} />
+                        <div className="flex-1 flex flex-col items-center justify-center gap-8 px-10">
+                            <div className="relative flex items-center justify-center mt-[-40px]">
+                                {/* Glowing backdrop pulse */}
+                                <div className="absolute inset-0 bg-indigo-600/10 rounded-[3rem] blur-3xl animate-pulse scale-[1.5]"></div>
+
+                                {/* Center floating dark box matching header */}
+                                <div className="w-28 h-28 rounded-[2rem] bg-gradient-to-br from-indigo-900 via-indigo-800 to-violet-900 flex items-center justify-center shadow-[0_20px_50px_rgba(49,46,129,0.3)] border border-indigo-400/30 relative z-10">
+                                    <div className="relative">
+                                        <FaRobot className="text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)] animate-pulse" size={48} />
+                                    </div>
+
+                                    {/* Spinning Orbit Ring */}
+                                    <svg className="absolute inset-0 w-full h-full animate-[spin_3s_linear_infinite] opacity-60" viewBox="0 0 100 100">
+                                        <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white" strokeDasharray="15 10" strokeLinecap="round" />
+                                    </svg>
                                 </div>
-                                <FaSpinner
-                                    className="absolute -bottom-1 -right-1 text-violet-500 animate-spin"
-                                    size={18}
-                                />
                             </div>
-                            <div className="text-center">
-                                <p className="font-semibold text-gray-700">
-                                    Analyzing {selectedFiles.length} document{selectedFiles.length !== 1 ? "s" : ""}...
+
+                            <div className="text-center relative z-10 space-y-3">
+                                <h3 className="text-[19px] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-800 to-violet-800 tracking-wide">
+                                    Analyzing Context...
+                                </h3>
+                                <p className="text-[14px] font-bold text-gray-500 max-w-[280px] mx-auto leading-relaxed">
+                                    Processing <span className="text-indigo-600">{selectedFiles.length}</span> document{selectedFiles.length !== 1 ? "s" : ""} to build your AI knowledge base.
                                 </p>
-                                <p className="text-sm text-gray-400 mt-1">
-                                    Downloading and processing your files
-                                </p>
+
+                                {/* Elegant animated wave dots */}
+                                <div className="flex items-center justify-center gap-2.5 pt-5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: '0s' }}></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-violet-600 animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -354,21 +374,22 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                             )}
 
                             {/* Messages */}
-                            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+                            <div className="flex-1 overflow-y-auto px-8 py-8 space-y-8 bg-gradient-to-b from-gray-50/30 to-white/10 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
                                 {messages.map((msg, idx) => (
                                     <div
                                         key={idx}
-                                        className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                                        className={`flex gap-4 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                                     >
                                         {msg.role === "ai" && (
-                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center mt-1">
-                                                <FaRobot className="text-violet-600" size={14} />
+                                            <div className="flex-shrink-0 w-10 h-10 rounded-[14px] bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center mt-1 shadow-[0_2px_10px_rgba(0,0,0,0.04)] border border-indigo-100/50 relative">
+                                                <div className="absolute -left-[5px] top-4 w-2 h-2 bg-white rotate-45 border-l border-b border-indigo-100/50"></div>
+                                                <FaRobot className="text-indigo-600" size={18} />
                                             </div>
                                         )}
                                         <div
-                                            className={`max-w-[80%] rounded-2xl px-4 py-3 ${msg.role === "user"
-                                                ? "bg-violet-600 text-white rounded-br-md"
-                                                : "bg-gray-100 text-gray-800 rounded-bl-md"
+                                            className={`max-w-[80%] rounded-[1.25rem] px-6 py-5 shadow-sm ${msg.role === "user"
+                                                ? "bg-gradient-to-br from-gray-900 to-gray-800 text-white rounded-br-md border border-gray-700 shadow-[0_4px_20px_rgba(0,0,0,0.1)]"
+                                                : "bg-white text-gray-800 rounded-bl-md border border-gray-100/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)]"
                                                 }`}
                                         >
                                             {msg.role === "ai" ? (
@@ -384,8 +405,8 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                                             )}
                                         </div>
                                         {msg.role === "user" && (
-                                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center mt-1">
-                                                <FaUser className="text-white" size={12} />
+                                            <div className="flex-shrink-0 w-9 h-9 rounded-2xl bg-indigo-100 flex items-center justify-center mt-1 border border-indigo-200">
+                                                <FaUser className="text-indigo-600" size={14} />
                                             </div>
                                         )}
                                     </div>
@@ -409,28 +430,29 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                             </div>
 
                             {/* Input */}
-                            <div className="border-t border-gray-200 px-4 py-3 bg-white">
-                                <div className="flex items-center gap-2">
-                                    <input
+                            <div className="border-t border-gray-200/60 px-8 py-6 bg-white/95 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.02)] relative z-20">
+                                <div className="flex items-center gap-4 bg-gray-50/80 p-2.5 rounded-[1.5rem] border border-gray-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-50 transition-all duration-300 shadow-[inset_0_2px_6px_rgba(0,0,0,0.02)]">
+                                    <textarea
                                         ref={inputRef}
-                                        type="text"
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
                                         onKeyDown={handleKeyDown}
                                         placeholder={
                                             sessionId
-                                                ? "Ask about your documents..."
-                                                : "Initializing..."
+                                                ? "Message AI Assistant..."
+                                                : "Initializing AI context..."
                                         }
                                         disabled={!sessionId || isSending}
-                                        className="flex-1 px-4 py-2.5 border border-gray-200 rounded-full text-sm outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed bg-gray-50"
+                                        rows={1}
+                                        className="flex-1 px-5 py-2.5 text-[15px] outline-none bg-transparent text-gray-800 placeholder:text-gray-400 font-medium disabled:opacity-50 disabled:cursor-not-allowed resize-none overflow-hidden max-h-32"
+                                        style={{ minHeight: "24px" }}
                                     />
                                     <button
                                         onClick={handleSend}
                                         disabled={!sessionId || isSending || !inputValue.trim()}
-                                        className="w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center hover:bg-violet-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+                                        className="w-12 h-12 rounded-[1.1rem] bg-gray-900 text-white flex items-center justify-center hover:bg-indigo-600 hover:shadow-[0_8px_20px_rgba(79,70,229,0.25)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none flex-shrink-0 group"
                                     >
-                                        <MdSend size={18} />
+                                        <MdSend size={20} className="translate-x-[1px] group-hover:scale-110 transition-transform duration-300" />
                                     </button>
                                 </div>
                             </div>

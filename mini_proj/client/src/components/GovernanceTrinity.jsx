@@ -57,10 +57,10 @@ const ConfidenceRing = ({ score, size = 110, stroke = 10 }) => {
 
 /* ──────────────────── Skeleton Card ──────────────────── */
 const SkeletonCard = () => (
-    <div className="w-full h-52 bg-white/50 p-8 shadow-sm rounded-xl border border-gray-100 flex flex-col items-center justify-center gap-3">
-        <div className="w-16 h-16 rounded-full bg-gray-100 animate-pulse" />
-        <div className="w-20 h-3 rounded bg-gray-100 animate-pulse" />
-        <div className="w-28 h-3 rounded bg-gray-100 animate-pulse" />
+    <div className="w-full h-52 bg-white/40 backdrop-blur-md p-8 shadow-sm rounded-2xl border border-white/60 flex flex-col items-center justify-center gap-3">
+        <div className="w-16 h-16 rounded-full bg-gray-200/50 animate-pulse" />
+        <div className="w-20 h-3 rounded-full bg-gray-200/50 animate-pulse" />
+        <div className="w-28 h-3 rounded-full bg-gray-200/50 animate-pulse" />
     </div>
 );
 
@@ -88,21 +88,22 @@ const GovernanceTrinity = ({ metrics, ai, loading }) => {
     return (
         <div style={{ marginBottom: "50px" }}>
             {/* Three Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12" style={{ gap: "40px", marginBottom: "30px" }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
 
                 {/* Card 1: Project Confidence */}
-                <div className="w-full bg-white/50 p-8 shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex flex-col items-center" style={{ marginBottom: "20px" }}>
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg shadow-md bg-[#6366f1]">
+                <div className="w-full bg-white/60 backdrop-blur-lg p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-3xl transition-all duration-300 transform hover:-translate-y-1 border border-white/80 flex flex-col items-center relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-indigo-600 text-2xl bg-indigo-50 shadow-sm border border-indigo-100 group-hover:scale-110 transition-transform duration-300">
                             <MdShield />
                         </div>
-                        <p className="text-base text-gray-500 font-medium tracking-wide">PROJECT CONFIDENCE</p>
+                        <p className="text-sm text-gray-500 font-bold tracking-widest uppercase">Project Confidence</p>
                     </div>
                     <div className="flex-1 flex items-center justify-center py-2">
                         <ConfidenceRing score={ai.confidenceScore} />
                     </div>
                     <span className={clsx(
-                        "mt-3 px-3 py-1 rounded-full text-xs font-semibold",
+                        "mt-4 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm",
                         riskBadgeClass[ai.riskLevel] || "bg-gray-50 text-gray-600"
                     )}>
                         {ai.riskLevel} Risk
@@ -112,58 +113,66 @@ const GovernanceTrinity = ({ metrics, ai, loading }) => {
                 {/* Card 2: Ripple Effect */}
                 <div
                     className={clsx(
-                        "w-full bg-white/50 p-8 shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border flex flex-col items-center",
+                        "w-full bg-white/60 backdrop-blur-lg p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-3xl transition-all duration-300 transform hover:-translate-y-1 border flex flex-col items-center relative overflow-hidden group",
                         metrics.impactsMilestone
-                            ? "border-red-200 ring-2 ring-red-100"
-                            : "border-gray-100"
+                            ? "border-rose-200 shadow-[0_0_15px_rgba(225,29,72,0.15)]"
+                            : "border-white/80"
                     )}
-                    style={{ marginBottom: "20px" }}
                 >
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className={clsx(
+                        "absolute top-0 left-0 w-full h-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+                        metrics.impactsMilestone ? "bg-gradient-to-r from-rose-500 to-pink-500" : "bg-gradient-to-r from-emerald-400 to-teal-500"
+                    )}></div>
+                    <div className="flex items-center gap-3 mb-6">
                         <div className={clsx(
-                            "w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg shadow-md",
-                            metrics.impactsMilestone ? "bg-[#be185d]" : "bg-[#0f766e]"
+                            "w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-sm border group-hover:scale-110 transition-transform duration-300",
+                            metrics.impactsMilestone ? "bg-rose-50 text-rose-600 border-rose-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
                         )}>
                             <MdHub />
                         </div>
-                        <p className="text-base text-gray-500 font-medium tracking-wide">RIPPLE EFFECT</p>
+                        <p className="text-sm text-gray-500 font-bold tracking-widest uppercase">Ripple Effect</p>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center py-2">
-                        <span className="text-4xl font-bold text-gray-800">{metrics.rippleCount}</span>
-                        <span className="text-sm text-gray-400 mt-1">Tasks Affected</span>
+                        <span className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-br from-gray-800 to-gray-500">{metrics.rippleCount}</span>
+                        <span className="text-sm font-medium text-gray-400 mt-2 uppercase tracking-wide">Tasks Affected</span>
                     </div>
                     {metrics.impactsMilestone && (
-                        <span className="mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 flex items-center gap-1">
-                            <MdWarning /> Milestone at Risk
+                        <span className="mt-4 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-100 flex items-center gap-1.5 shadow-sm">
+                            <MdWarning className="text-sm" /> Milestone at Risk
                         </span>
                     )}
                 </div>
 
                 {/* Card 3: Time Debt */}
-                <div className="w-full bg-white/50 p-8 shadow-sm rounded-xl hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100 flex flex-col items-center" style={{ marginBottom: "20px" }}>
-                    <div className="flex items-center gap-2 mb-4">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg shadow-md bg-[#f59e0b]">
+                <div className="w-full bg-white/60 backdrop-blur-lg p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-3xl transition-all duration-300 transform hover:-translate-y-1 border border-white/80 flex flex-col items-center relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-400 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-amber-500 text-2xl bg-amber-50 shadow-sm border border-amber-100 group-hover:scale-110 transition-transform duration-300">
                             <MdAccessTime />
                         </div>
-                        <p className="text-base text-gray-500 font-medium tracking-wide">TIME DEBT</p>
+                        <p className="text-sm text-gray-500 font-bold tracking-widest uppercase">Time Debt</p>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center py-2">
-                        <span className="text-4xl font-bold text-gray-800">+{metrics.timeDebtHours}</span>
-                        <span className="text-sm text-gray-400 mt-1">Hours Recovery</span>
+                        <span className="text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-br from-gray-800 to-gray-500">+{metrics.timeDebtHours}</span>
+                        <span className="text-sm font-medium text-gray-400 mt-2 uppercase tracking-wide">Hours Recovery</span>
                     </div>
-                    <span className="mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 flex items-center gap-1">
-                        <MdTrendingDown /> {metrics.delayDays} day{metrics.delayDays !== 1 ? "s" : ""} delay
+                    <span className="mt-4 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1.5 shadow-sm">
+                        <MdTrendingDown className="text-sm" /> {metrics.delayDays} day{metrics.delayDays !== 1 ? "s" : ""} delay
                     </span>
                 </div>
             </div>
 
             {/* Strategic Advice */}
             {ai.strategicAdvice && (
-                <div className="w-full bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <p className="text-xs text-blue-600 font-semibold tracking-wide mb-1">AI STRATEGIC ADVICE</p>
-                    <p className="text-base font-semibold text-gray-800">{ai.strategicAdvice}</p>
+                <div className="w-full bg-gradient-to-br from-indigo-50/50 to-purple-50/50 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-indigo-100/50 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-indigo-500 to-purple-500"></div>
+                    <p className="text-xs text-indigo-600 font-bold uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+                        AI Strategic Insight
+                    </p>
+                    <p className="text-lg font-medium text-gray-800 leading-relaxed">{ai.strategicAdvice}</p>
                     {ai.explanation && (
-                        <p className="text-sm text-gray-400 mt-2">{ai.explanation}</p>
+                        <p className="text-sm text-gray-500 mt-3 leading-relaxed border-t border-indigo-100/50 pt-3">{ai.explanation}</p>
                     )}
                 </div>
             )}

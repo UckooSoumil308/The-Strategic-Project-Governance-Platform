@@ -76,6 +76,7 @@ const createTask = async (req, res) => {
                 description,
                 governanceStatus: "pending_governance_review",
                 governanceReason: governance.reason,
+                organizationId: req.user.organizationId,
             });
 
             return res.status(403).json({
@@ -102,6 +103,7 @@ const createTask = async (req, res) => {
             description,
             governanceStatus: "approved",
             governanceReason: governance.reason,
+            organizationId: req.user.organizationId,
         });
 
         await Notice.create({
@@ -134,9 +136,9 @@ const createTask = async (req, res) => {
 const duplicateTask = async (req, res) => {
     try {
         const { id } = req.params;
-        const { userId } = req.user;
+        const { userId, organizationId } = req.user;
 
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
 
         //alert users of the task
         let text = "New task has been assigned to you";
@@ -158,8 +160,9 @@ const duplicateTask = async (req, res) => {
         };
 
         const newTask = await Task.create({
-            ...task,
+            ...task.toObject(),
             title: "Duplicate - " + task.title,
+            _id: undefined, // ensure new ID is generated
         });
 
         newTask.team = task.team;
@@ -192,13 +195,19 @@ const updateTask = async (req, res) => {
     const { title, date, team, stage, priority, assets, links, description } =
         req.body;
 
+    const { organizationId } = req.user;
+
     try {
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
+
+        if (!task) {
+            return res.status(404).json({ status: false, message: "Task not found or unauthorized access." });
+        }
 
         let newLinks = [];
 
         if (links) {
-            newLinks = links.split(",");
+            newLinks = Array.isArray(links) ? links : links.split(",");
         }
 
         task.title = title;
@@ -224,8 +233,9 @@ const updateTaskStage = async (req, res) => {
     try {
         const { id } = req.params;
         const { stage } = req.body;
+        const { organizationId } = req.user;
 
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
 
         task.stage = stage.toLowerCase();
 
@@ -243,10 +253,12 @@ const updateSubTaskStage = async (req, res) => {
     try {
         const { taskId, subTaskId } = req.params;
         const { status } = req.body;
+        const { organizationId } = req.user;
 
         await Task.findOneAndUpdate(
             {
                 _id: taskId,
+                organizationId,
                 "subTasks._id": subTaskId,
             },
             {
@@ -271,6 +283,7 @@ const updateSubTaskStage = async (req, res) => {
 const createSubTask = async (req, res) => {
     const { title, tag, date } = req.body;
     const { id } = req.params;
+    const { organizationId } = req.user;
 
     try {
         const newSubTask = {
@@ -280,7 +293,7 @@ const createSubTask = async (req, res) => {
             isCompleted: false,
         };
 
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
 
         task.subTasks.push(newSubTask);
 
@@ -295,10 +308,10 @@ const createSubTask = async (req, res) => {
 };
 
 const getTasks = async (req, res) => {
-    const { userId, isAdmin } = req.user;
+    const { userId, isAdmin, organizationId } = req.user;
     const { stage, isTrashed, search } = req.query;
 
-    let query = { isTrashed: isTrashed ? true : false };
+    let query = { isTrashed: isTrashed ? true : false, organizationId };
 
     if (!isAdmin) {
         query.team = { $all: [userId] };
@@ -336,8 +349,9 @@ const getTasks = async (req, res) => {
 const getTask = async (req, res) => {
     try {
         const { id } = req.params;
+        const { organizationId } = req.user;
 
-        const task = await Task.findById(id)
+        const task = await Task.findOne({ _id: id, organizationId })
             .populate({
                 path: "team",
                 select: "name title role email",
@@ -360,11 +374,11 @@ const getTask = async (req, res) => {
 
 const postTaskActivity = async (req, res) => {
     const { id } = req.params;
-    const { userId } = req.user;
+    const { userId, organizationId } = req.user;
     const { type, activity } = req.body;
 
     try {
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
 
         const data = {
             type,
@@ -385,9 +399,10 @@ const postTaskActivity = async (req, res) => {
 
 const trashTask = async (req, res) => {
     const { id } = req.params;
+    const { organizationId } = req.user;
 
     try {
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
 
         task.isTrashed = true;
 
@@ -406,13 +421,14 @@ const deleteRestoreTask = async (req, res) => {
     try {
         const { id } = req.params;
         const { actionType } = req.query;
+        const { organizationId } = req.user;
 
         if (actionType === "delete") {
-            await Task.findByIdAndDelete(id);
+            await Task.findOneAndDelete({ _id: id, organizationId });
         } else if (actionType === "deleteAll") {
-            await Task.deleteMany({ isTrashed: true });
+            await Task.deleteMany({ isTrashed: true, organizationId });
         } else if (actionType === "restore") {
-            const resp = await Task.findById(id);
+            const resp = await Task.findOne({ _id: id, organizationId });
 
             resp.isTrashed = false;
 
@@ -435,12 +451,13 @@ const deleteRestoreTask = async (req, res) => {
 
 const dashboardStatistics = async (req, res) => {
     try {
-        const { userId, isAdmin } = req.user;
+        const { userId, isAdmin, organizationId } = req.user;
 
-        // Fetch all tasks from the database
+        // Fetch all tasks from the database scoped to organizationId
         const allTasks = isAdmin
             ? await Task.find({
                 isTrashed: false,
+                organizationId
             })
                 .populate({
                     path: "team",
@@ -449,6 +466,7 @@ const dashboardStatistics = async (req, res) => {
                 .sort({ _id: -1 })
             : await Task.find({
                 isTrashed: false,
+                organizationId,
                 team: { $all: [userId] },
             })
                 .populate({
@@ -457,7 +475,7 @@ const dashboardStatistics = async (req, res) => {
                 })
                 .sort({ _id: -1 });
 
-        const users = await User.find({ isActive: true })
+        const users = await User.find({ isActive: true, organizationId })
             .select("name title role isActive createdAt")
             .limit(10)
             .sort({ _id: -1 });
@@ -508,9 +526,10 @@ const dashboardStatistics = async (req, res) => {
 const deleteAsset = async (req, res) => {
     const { id } = req.params;
     const { assetUrl } = req.body;
+    const { organizationId } = req.user;
 
     try {
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
 
         if (!task) {
             return res.status(404).json({ status: false, message: "Task not found." });
@@ -527,14 +546,17 @@ const deleteAsset = async (req, res) => {
 
 const governanceStats = async (req, res) => {
     try {
-        const totalTasks = await Task.countDocuments({ isTrashed: false });
+        const { organizationId } = req.user;
+        const totalTasks = await Task.countDocuments({ isTrashed: false, organizationId });
         const approvedTasks = await Task.countDocuments({
             isTrashed: false,
             governanceStatus: "approved",
+            organizationId
         });
         const blockedTasks = await Task.countDocuments({
             isTrashed: false,
             governanceStatus: { $in: ["pending_governance_review", "blocked"] },
+            organizationId
         });
 
         const alignmentPercent =
@@ -554,9 +576,11 @@ const governanceStats = async (req, res) => {
 
 const getGovernanceTasks = async (req, res) => {
     try {
+        const { organizationId } = req.user;
         const tasks = await Task.find({
             isTrashed: false,
             governanceStatus: "pending_governance_review",
+            organizationId
         })
             .populate({
                 path: "team",
@@ -577,12 +601,13 @@ const reviewGovernanceTask = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body; // "approved" or "blocked"
+        const { organizationId } = req.user;
 
         if (!["approved", "blocked"].includes(status)) {
             return res.status(400).json({ status: false, message: "Invalid status." });
         }
 
-        const task = await Task.findById(id);
+        const task = await Task.findOne({ _id: id, organizationId });
         if (!task) {
             return res.status(404).json({ status: false, message: "Task not found." });
         }

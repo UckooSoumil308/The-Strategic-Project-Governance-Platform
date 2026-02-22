@@ -230,22 +230,22 @@ const ImpactGraph = ({ nodes, edges, criticalPath, highlightIds = [] }) => {
 
     return (
         <div ref={containerRef} className="relative w-full" style={{ height: "450px" }}>
-            <svg ref={svgRef} className="w-full h-full rounded-lg" style={{ background: "#f9fafb" }} />
+            <svg ref={svgRef} className="w-full h-full rounded-3xl border border-gray-100 shadow-[inset_0_2px_20px_rgb(0,0,0,0.02)]" style={{ background: "#f8fafc" }} />
 
             {/* Tooltip */}
             {tooltip && (
                 <div
-                    className="fixed bg-white shadow-xl rounded-lg border border-gray-200 text-xs z-50"
+                    className="fixed bg-white/95 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.12)] rounded-2xl border border-white/60 text-xs z-50 transition-all duration-200"
                     style={{
                         left: tooltip.x + 12,
                         top: tooltip.y - 10,
-                        padding: "12px 16px",
+                        padding: "16px 20px",
                         pointerEvents: "none",
-                        minWidth: "190px",
+                        minWidth: "220px",
                         lineHeight: "1.8",
                     }}
                 >
-                    <div className={`font-bold text-sm mb-1 ${tooltip.data.isCritical ? "text-red-600" : "text-blue-600"}`}>
+                    <div className={`font-bold text-[15px] mb-3 pb-2 border-b border-gray-100/50 ${tooltip.data.isCritical ? "text-rose-600" : "text-indigo-600"}`}>
                         {tooltip.data.title}
                     </div>
                     <div className="grid gap-x-3" style={{ gridTemplateColumns: "auto 1fr" }}>
@@ -271,8 +271,8 @@ const ImpactGraph = ({ nodes, edges, criticalPath, highlightIds = [] }) => {
             )}
 
             {/* Legend */}
-            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg border border-gray-200 p-3 text-[11px] text-gray-500 shadow-sm">
-                <div className="font-semibold text-gray-700 text-xs mb-2">Legend</div>
+            <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-lg rounded-2xl border border-white p-4 text-[11px] text-gray-600 shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
+                <div className="font-bold uppercase tracking-wider text-gray-800 text-xs mb-3">Legend</div>
                 <div className="flex items-center gap-2 mb-1">
                     <span className="w-3 h-3 rounded-full border-2 border-red-400 bg-red-50 inline-block" />
                     Critical Path

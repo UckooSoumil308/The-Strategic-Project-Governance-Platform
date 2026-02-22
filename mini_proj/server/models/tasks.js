@@ -58,6 +58,7 @@ const taskSchema = new Schema(
             enum: ["approved", "pending_governance_review", "blocked"],
         },
         governanceReason: { type: String, default: "" },
+        organizationId: { type: Schema.Types.ObjectId, ref: "Organization", required: true },
     },
     { timestamps: true }
 );
