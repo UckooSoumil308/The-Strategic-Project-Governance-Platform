@@ -113,7 +113,7 @@ const Table = ({ tasks }) => {
 
             <td className='py-2'>
                 <div className='flex'>
-                    {task?.team?.map((m, index) => (
+                    {task?.team?.filter(m => m != null).map((m, index) => (
                         <div
                             key={m._id}
                             className={clsx(

@@ -75,7 +75,7 @@ const TaskCard = ({ task }) => {
                     </div>
 
                     <div className='flex flex-row-reverse'>
-                        {task?.team?.map((m, index) => (
+                        {task?.team?.filter(m => m != null).map((m, index) => (
                             <div
                                 key={index}
                                 className={clsx(

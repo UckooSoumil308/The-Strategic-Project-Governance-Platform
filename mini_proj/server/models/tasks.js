@@ -1,7 +1,8 @@
 import mongoose, { Schema } from "mongoose";
 
 // ── Impact-relevant fields (trigger recalc when these change) ────
-const IMPACT_FIELDS = ["stage", "date", "duration", "dependencies", "isTrashed"];
+// Adding Gantt ecosystem fields to ensure recalculations include timeline shifts
+const IMPACT_FIELDS = ["stage", "date", "duration", "dependencies", "predecessors", "successors", "leadTime", "lagTime", "isTrashed"];
 
 const taskSchema = new Schema(
     {
@@ -42,6 +43,7 @@ const taskSchema = new Schema(
                 date: Date,
                 tag: String,
                 isCompleted: Boolean,
+                estimated_hours: Number,
             },
         ],
         description: String,
@@ -50,7 +52,19 @@ const taskSchema = new Schema(
         team: [{ type: Schema.Types.ObjectId, ref: "User" }],
         isTrashed: { type: Boolean, default: false },
         duration: { type: Number, default: 1 },
-        dependencies: [{ type: Schema.Types.ObjectId, ref: "Task" }],
+        dependencies: [{ type: Schema.Types.ObjectId, ref: "Task" }], // Generic dependencies (legacy)
+        predecessors: [{ type: Schema.Types.ObjectId, ref: "Task" }], // Explicit Finish-to-Start predecessors
+        successors: [{ type: Schema.Types.ObjectId, ref: "Task" }],   // Explicit successors driven by F-to-S cascades
+        leadTime: { type: Number, default: 0 },                       // Days to bring forward a successor start
+        lagTime: { type: Number, default: 0 },                        // Days to delay a successor start
+        baselineSchedule: {
+            startDate: { type: Date },
+            endDate: { type: Date },
+            duration: { type: Number },
+            costPerDay: { type: Number }
+        },
+        isMilestone: { type: Boolean, default: false },
+        isEpic: { type: Boolean, default: false },
         costPerDay: { type: Number, default: 0 },
         governanceStatus: {
             type: String,

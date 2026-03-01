@@ -142,6 +142,17 @@ export const postApiSlice = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ["Tasks"],
         }),
+
+        updateTaskSchedule: builder.mutation({
+            query: (data) => ({
+                url: `${TASKS_URL}/update/${data._id}`,
+                method: "PUT",
+                // We send specific scheduling fields for optimal timeline rendering
+                body: data,
+                credentials: "include",
+            }),
+            invalidatesTags: ["Tasks"], // Force re-fetch of all tasks to get the cascaded dates
+        }),
     }),
 });
 
@@ -161,4 +172,5 @@ export const {
     useDeleteAssetMutation,
     useGetGovernanceTasksQuery,
     useReviewGovernanceTaskMutation,
+    useUpdateTaskScheduleMutation,
 } = postApiSlice;

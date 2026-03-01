@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { MdClose, MdSend, MdRefresh, MdMinimize, MdSelectAll } from "react-icons/md";
+import { MdClose, MdSend, MdRefresh, MdMinimize, MdSelectAll, MdGridView } from "react-icons/md";
 import { FaRobot, FaUser, FaSpinner, FaFileAlt, FaFilePdf, FaFileWord, FaFilePowerpoint, FaImage, FaVideo, FaMusic } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import {
     useAnalyzeContextMutation,
     useSendAiChatMutation,
+    useGenerateAiScheduleMutation,
 } from "../redux/slices/api/aiApiSlice";
 
 // ── File icon/label helpers ──────────────────────────────────────────
@@ -43,8 +44,13 @@ const FILE_CONTEXT_ICONS = {
 const PHASE_PICKER = "picker";
 const PHASE_LOADING = "loading";
 const PHASE_CHAT = "chat";
+const PHASE_GANTT_START = "gantt-start";
 
-const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
+const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [], onScheduleGenerated }) => {
+    // ── Mode Toggle ──────────────────────────
+    const [aiMode, setAiMode] = useState("review"); // "review" | "maker"
+
+    // ── Shared / Review State ────────────────
     const [phase, setPhase] = useState(PHASE_PICKER);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [messages, setMessages] = useState([]);
@@ -53,11 +59,15 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
     const [filesProcessed, setFilesProcessed] = useState([]);
     const [isSending, setIsSending] = useState(false);
 
+    // ── Gantt Maker State ────────────────────
+    const [ganttPrompt, setGanttPrompt] = useState("");
+
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
     const [analyzeContext] = useAnalyzeContextMutation();
     const [sendAiChat] = useSendAiChatMutation();
+    const [generateAiSchedule, { isLoading: isGeneratingSchedule }] = useGenerateAiScheduleMutation();
 
     // Auto-scroll
     useEffect(() => {
@@ -156,6 +166,46 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
         }
     };
 
+    // ── Generate AI Gantt Schedule ───────────────────────────────────
+    const handleGenerateSchedule = async () => {
+        if (!ganttPrompt.trim()) return;
+
+        try {
+            const result = await generateAiSchedule({ project_description: ganttPrompt }).unwrap();
+
+            // Map the pure JSON into mock Task Database schemas for rendering 
+            const baseDate = new Date();
+            let rollingDateTimestamp = baseDate.getTime();
+
+            const draftTasks = result.wbs.map((task, index) => {
+                const tempId = `mock-ai-${index}`;
+                // Map numeric predecessors to their assigned string IDs
+                const predecessors = task.logical_predecessors.map(idx => `mock-ai-${idx}`);
+
+                return {
+                    _id: tempId,
+                    title: task.title,
+                    description: task.description,
+                    stage: "todo",       // Default pipeline stage
+                    priority: "normal",
+                    duration: task.estimated_duration_days || 1,
+                    predecessors: predecessors,
+                    date: new Date(rollingDateTimestamp).toISOString(),
+                    team: [],           // Empty team assignment
+                    isAiPreview: true,   // UI hint flag
+                };
+            });
+
+            // Lift state up to the Tasks.jsx container to render seamlessly!
+            if (onScheduleGenerated) {
+                onScheduleGenerated(draftTasks);
+                onMinimize(); // Hide the panel so the user can see the magic Gantt chart
+            }
+        } catch (error) {
+            console.error("Gantt Generation Error: ", error);
+        }
+    };
+
     // ── Refresh — back to file picker ────────────────────────────────
     const handleRefresh = () => {
         setPhase(PHASE_PICKER);
@@ -163,6 +213,7 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
         setMessages([]);
         setFilesProcessed([]);
         setSelectedFiles([...assets]);
+        setGanttPrompt("");
     };
 
     // ── Close — destroy everything ───────────────────────────────────
@@ -195,17 +246,35 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                             </div>
                             <div className="relative z-10">
                                 <h3 className="font-extrabold text-white text-[19px] tracking-wide leading-tight outline-none drop-shadow-sm">
-                                    AI Document Review
+                                    AI Co-Pilot
                                 </h3>
                                 <p className="text-indigo-200 text-xs mt-1 font-semibold tracking-widest uppercase opacity-80">
-                                    Powered by Gemini AI
+                                    Powered by Llama & Gemini
                                 </p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-1.5 relative z-20">
+                            {/* Mode Toggles */}
+                            <div className="flex bg-indigo-900/50 p-1 rounded-xl border border-indigo-400/20 mr-4">
+                                <button
+                                    onClick={() => setAiMode("review")}
+                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${aiMode === "review" ? "bg-indigo-500/80 text-white shadow" : "text-indigo-200 hover:text-white"
+                                        }`}
+                                >
+                                    Document Review
+                                </button>
+                                <button
+                                    onClick={() => setAiMode("maker")}
+                                    className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${aiMode === "maker" ? "bg-indigo-500/80 text-white shadow" : "text-indigo-200 hover:text-white"
+                                        }`}
+                                >
+                                    Project Maker
+                                </button>
+                            </div>
+
                             {/* Refresh */}
-                            {phase === PHASE_CHAT && (
+                            {phase === PHASE_CHAT && aiMode === "review" && (
                                 <button
                                     onClick={handleRefresh}
                                     title="New session"
@@ -233,8 +302,54 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                         </div>
                     </div>
 
-                    {/* ── Phase: File Picker ──────────────────────── */}
-                    {phase === PHASE_PICKER && (
+                    {/* ── Mode: Maker (Gantt Schedule) ──────────────── */}
+                    {aiMode === "maker" && (
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-50 to-white relative overflow-hidden">
+                            {isGeneratingSchedule ? (
+                                <div className="text-center space-y-6 max-w-sm z-10">
+                                    <div className="relative w-24 h-24 mx-auto">
+                                        <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full animate-pulse"></div>
+                                        <FaRobot size={48} className="absolute inset-0 m-auto text-indigo-600 animate-bounce" />
+                                        <svg className="absolute inset-0 w-full h-full animate-[spin_4s_linear_infinite] opacity-60 text-indigo-400" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="20 10" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-violet-600">
+                                        Architecting your project...
+                                    </h3>
+                                    <p className="text-sm text-gray-500">
+                                        Llama 3.2 is computing the optimal Work Breakdown Structure and calculating dependencies.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="w-full max-w-lg space-y-6 z-10">
+                                    <div className="text-center space-y-2">
+                                        <h2 className="text-2xl font-black text-gray-800 tracking-tight">Generate a Timeline</h2>
+                                        <p className="text-sm text-gray-500">Describe your project goal, scope, and estimated duration. The AI will instantly outline structured tasks and dependencies.</p>
+                                    </div>
+
+                                    <textarea
+                                        value={ganttPrompt}
+                                        onChange={(e) => setGanttPrompt(e.target.value)}
+                                        placeholder="e.g., 'Build a new employee onboarding portal using React. It should take about 3 weeks and include backend setup, UI design, and strict testing phases.'"
+                                        className="w-full h-36 p-4 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-2xl shadow-sm focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none resize-none transition-all placeholder:text-gray-400"
+                                    ></textarea>
+
+                                    <button
+                                        onClick={handleGenerateSchedule}
+                                        disabled={!ganttPrompt.trim()}
+                                        className="relative w-full py-4 rounded-xl font-bold text-white bg-gray-900 hover:bg-indigo-600 shadow-[0_4px_15px_rgba(0,0,0,0.1)] hover:shadow-[0_8px_25px_rgba(79,70,229,0.3)] hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                    >
+                                        <MdGridView size={18} />
+                                        <span>Create Gantt Magic</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ── Mode: Review (File Picker Phase) ──────────── */}
+                    {aiMode === "review" && phase === PHASE_PICKER && (
                         <div className="flex-1 flex flex-col overflow-hidden">
                             <div className="px-8 py-5 border-b border-gray-100 bg-white/40 backdrop-blur-md z-10 shadow-sm relative">
                                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-200/50 to-transparent"></div>
@@ -307,8 +422,8 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                         </div>
                     )}
 
-                    {/* ── Phase: Loading ──────────────────────────── */}
-                    {phase === PHASE_LOADING && (
+                    {/* ── Mode: Review (Loading Phase) ──────────────── */}
+                    {aiMode === "review" && phase === PHASE_LOADING && (
                         <div className="flex-1 flex flex-col items-center justify-center gap-8 px-10">
                             <div className="relative flex items-center justify-center mt-[-40px]">
                                 {/* Glowing backdrop pulse */}
@@ -345,12 +460,12 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                         </div>
                     )}
 
-                    {/* ── Phase: Chat ─────────────────────────────── */}
-                    {phase === PHASE_CHAT && (
-                        <>
+                    {/* ── Mode: Review (Chat Phase) ─────────────────── */}
+                    {aiMode === "review" && phase === PHASE_CHAT && (
+                        <div className="flex-1 flex flex-col overflow-hidden">
                             {/* Files in Context Strip */}
                             {filesProcessed.length > 0 && (
-                                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex-shrink-0">
                                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
                                         Files in Context ({filesProcessed.length})
                                     </p>
@@ -430,7 +545,7 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                             </div>
 
                             {/* Input */}
-                            <div className="border-t border-gray-200/60 px-8 py-6 bg-white/95 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.02)] relative z-20">
+                            <div className="flex-shrink-0 border-t border-gray-200/60 px-8 py-6 bg-white/95 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.02)] relative z-20">
                                 <div className="flex items-center gap-4 bg-gray-50/80 p-2.5 rounded-[1.5rem] border border-gray-200 focus-within:border-indigo-400 focus-within:ring-4 focus-within:ring-indigo-50 transition-all duration-300 shadow-[inset_0_2px_6px_rgba(0,0,0,0.02)]">
                                     <textarea
                                         ref={inputRef}
@@ -456,7 +571,7 @@ const AiChatPanel = ({ isOpen, onClose, onMinimize, taskId, assets = [] }) => {
                                     </button>
                                 </div>
                             </div>
-                        </>
+                        </div>
                     )}
                 </div>
             </div>
