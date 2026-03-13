@@ -1,5 +1,6 @@
 import Task from "../models/tasks.js";
 import { initializeSession, sendMessage } from "../utils/GeminiService.js";
+import axios from "axios";
 
 /**
  * POST /api/ai/analyze-context
@@ -90,4 +91,35 @@ const chat = async (req, res) => {
     }
 };
 
-export { analyzeContext, chat };
+/**
+ * POST /api/ai/agent-command
+ * Body: { command, userId }
+ * Passes a command to the n8n Agent and waits for a response.
+ */
+const sendCommandToAgent = async (req, res) => {
+    try {
+        const { command } = req.body;
+        const { userId } = req.user;
+
+        if (!command) {
+            return res.status(400).json({ status: false, message: "Command is required." });
+        }
+
+        const n8nAgentUrl = process.env.N8N_AGENT_WEBHOOK_URL;
+        if (!n8nAgentUrl) {
+            return res.status(500).json({ status: false, message: "N8N Agent URL is not configured." });
+        }
+
+        const response = await axios.post(n8nAgentUrl, {
+            command,
+            userId
+        });
+
+        res.status(200).json({ reply: response.data.reply || response.data });
+    } catch (error) {
+        console.error("Agent command error:", error.message);
+        res.status(500).json({ status: false, message: "Failed to communicate with Agent." });
+    }
+};
+
+export { analyzeContext, chat, sendCommandToAgent };

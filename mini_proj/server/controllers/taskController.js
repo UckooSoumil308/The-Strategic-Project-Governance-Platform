@@ -3,6 +3,7 @@ import Notice from "../models/notifications.js";
 import Task from "../models/tasks.js";
 import User from "../models/users.js";
 import { evaluateTask } from "../utils/GovernanceAgent.js";
+import axios from "axios";
 
 /**
  * Recursively updates successor dates based on Finish-to-Start logic.
@@ -115,6 +116,17 @@ const createTask = async (req, res) => {
                 governanceReason: governance.reason,
                 organizationId: req.user.organizationId,
             });
+
+            // ── Phase 2: Outbound Webhook to n8n ──
+            const n8nUrl = process.env.N8N_WEBHOOK_BASE_URL;
+            if (n8nUrl) {
+                axios.post(n8nUrl, {
+                    taskId: blockedTask._id,
+                    title: blockedTask.title,
+                    reason: governance.reason,
+                    projectManager: req.user.userId
+                }).catch(err => console.error("Failed to notify n8n:", err.message));
+            }
 
             return res.status(403).json({
                 status: false,
@@ -314,6 +326,25 @@ const updateTask = async (req, res) => {
         if (dateChanged || durationChanged) {
             const endDate = new Date(newDateObj.getTime() + (task.duration || 1) * 86400000);
             await updateSuccessorsSchedule(task._id, endDate, organizationId);
+
+            // ── Phase 3: Impact Alert Trigger ──
+            const previousEndDate = previousDate ? previousDate + (previousDuration * 86400000) : endDate.getTime();
+            const delayDays = Math.max(0, (endDate.getTime() - previousEndDate) / 86400000);
+
+            // Heuristic impact score calculation (e.g., 10 points per day of delay)
+            const impactScore = delayDays * 10;
+
+            if (impactScore > 80) {
+                const n8nUrl = process.env.N8N_IMPACT_WEBHOOK_URL;
+                if (n8nUrl) {
+                    axios.post(n8nUrl, {
+                        delayedTaskId: task._id,
+                        taskName: task.title,
+                        impactScore,
+                        projectManager: req.user.userId
+                    }).catch(err => console.error("Failed to notify n8n of impact:", err.message));
+                }
+            }
         }
 
         res
@@ -724,6 +755,48 @@ const reviewGovernanceTask = async (req, res) => {
     }
 };
 
+const approveQuarantinedTask = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const task = await Task.findById(id);
+
+        if (!task) {
+            return res.status(404).json({ status: false, message: "Task not found." });
+        }
+
+        task.governanceStatus = "approved"; // active status
+        await task.save();
+
+        res.status(200).json({ status: true, message: "Task approved successfully via n8n." });
+    } catch (error) {
+        return res.status(500).json({ status: false, message: error.message });
+    }
+};
+
+const applyMitigationPlan = async (req, res) => {
+    try {
+        const { adjusted_durations, strategy_summary } = req.body;
+
+        if (!adjusted_durations || typeof adjusted_durations !== "object") {
+            return res.status(400).json({ status: false, message: "Invalid payload format for adjusted_durations." });
+        }
+
+        const updatePromises = Object.entries(adjusted_durations).map(([taskId, newDuration]) => {
+            return Task.findByIdAndUpdate(taskId, { duration: newDuration });
+        });
+
+        await Promise.all(updatePromises);
+
+        res.status(200).json({
+            status: true,
+            message: "Mitigation plan applied successfully.",
+            strategy_summary
+        });
+    } catch (error) {
+        return res.status(500).json({ status: false, message: error.message });
+    }
+};
+
 export {
     createSubTask,
     createTask,
@@ -736,9 +809,11 @@ export {
     getTasks,
     governanceStats,
     postTaskActivity,
-    reviewGovernanceTask,
     trashTask,
     updateSubTaskStage,
     updateTask,
     updateTaskStage,
+    approveQuarantinedTask,
+    applyMitigationPlan,
+    reviewGovernanceTask,
 };

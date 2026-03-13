@@ -36,6 +36,12 @@ class RefineRequest(BaseModel):
     current_schedule: list
     user_instructions: str
 
+class MitigationRequest(BaseModel):
+    impact_score: float
+    delayed_task_name: str
+    delay_days: int
+    downstream_dependencies: list[str]
+
 # ── 2. Structured Output Pydantic Models ──────────────────────
 # These define the exact JSON shape Ollama must return
 class GeneratedTask(BaseModel):
@@ -48,6 +54,10 @@ class GeneratedTask(BaseModel):
 class ProjectSchedule(BaseModel):
     tasks: list[GeneratedTask]
 
+class MitigationPlan(BaseModel):
+    strategy_summary: str
+    tasks_to_parallelize: list[str]
+    adjusted_durations: dict[str, int]
 
 class GanttResponse(BaseModel):
     wbs: list[dict]
@@ -70,9 +80,13 @@ Project Description:
 # ── 4. Endpoints ──────────────────────────────────────────────
 @app.post("/api/ai/generate-schedule", response_model=GanttResponse)
 def generate_schedule(request: GanttRequest):
+    # Reload config to pick up new Ngrok URL if it changed
+    load_dotenv(dotenv_path)
+    current_colab_url = os.getenv("COLAB_JUDGE_URL", "http://localhost:8000").strip().rstrip('/')
+    
     print(f"Received request for project: {request.project_description[:50]}...")
     try:
-        print(f"Contacting remote Colab FastAPI via {colab_url}/api/ai/generate-schedule...")
+        print(f"Contacting remote Colab FastAPI via {current_colab_url}/api/ai/generate-schedule...")
         
         # We need to bypass the ngrok warning if it's a free tier tunnel
         headers = {
@@ -82,17 +96,31 @@ def generate_schedule(request: GanttRequest):
         
         # The Colab notebook exposes /api/ai/generate-schedule directly!
         res = requests.post(
-            f"{colab_url}/api/ai/generate-schedule",
+            f"{current_colab_url}/api/ai/generate-schedule",
             headers=headers,
             json={"project_description": request.project_description},
-            timeout=120
+            timeout=300
         )
         
+        print(f"Colab Response Status: {res.status_code}")
+        print(f"Raw Colab Content: {res.text[:500]}...") # Print first 500 chars 
+
         res.raise_for_status()
-        raw_content = res.json()
         
-        # We know the colab endpoint returns a valid ProjectSchedule JSON
-        parsed_schedule = ProjectSchedule.model_validate(raw_content)
+        try:
+            raw_content = res.json()
+        except Exception as json_err:
+            print(f"FAILED TO DECODE JSON. Raw response content: {res.text[:1000]}")
+            raise HTTPException(status_code=500, detail=f"Colab returned non-JSON response. Check if Ngrok tunnel is still active.")
+
+        try:
+            # We know the colab endpoint returns a valid ProjectSchedule JSON
+            parsed_schedule = ProjectSchedule.model_validate(raw_content)
+        except Exception as val_err:
+            print(f"PYDANTIC VALIDATION ERROR: {val_err}")
+            print(f"Raw object from Colab: {raw_content}")
+            raise HTTPException(status_code=500, detail=f"AI output did not match expected schema. Raw: {str(raw_content)[:200]}")
+
         print("Colab FastAPI response successfully parsed into Pydantic models.")
         
         # Convert back to standard dicts for the generic FastAPI response
@@ -104,6 +132,9 @@ def generate_schedule(request: GanttRequest):
             "message": "AI Schedule generated successfully."
         }
         
+    except requests.exceptions.Timeout:
+        print("Error: The request to Colab timed out after 300 seconds.")
+        raise HTTPException(status_code=504, detail="AI generation timed out. Please try a simpler project description or check if the Colab GPU is busy.")
     except json.JSONDecodeError as e:
         print(f"Failed to parse LLM JSON: {e}")
         raise HTTPException(status_code=500, detail="AI output could not be parsed as valid JSON.")
@@ -113,9 +144,13 @@ def generate_schedule(request: GanttRequest):
 
 @app.post("/api/ai/refine-schedule", response_model=GanttResponse)
 def refine_schedule(request: RefineRequest):
+    # Reload config to pick up new Ngrok URL if it changed
+    load_dotenv(dotenv_path)
+    current_colab_url = os.getenv("COLAB_JUDGE_URL", "http://localhost:8000").strip().rstrip('/')
+
     print(f"Received refine request...")
     try:
-        print(f"Contacting remote Colab FastAPI via {colab_url}/api/ai/refine-schedule...")
+        print(f"Contacting remote Colab FastAPI via {current_colab_url}/api/ai/refine-schedule...")
         
         headers = {
             "ngrok-skip-browser-warning": "69420",
@@ -123,13 +158,13 @@ def refine_schedule(request: RefineRequest):
         }
         
         res = requests.post(
-            f"{colab_url}/api/ai/refine-schedule",
+            f"{current_colab_url}/api/ai/refine-schedule",
             headers=headers,
             json={
                 "current_schedule": {"tasks": request.current_schedule},
                 "user_instructions": request.user_instructions
             },
-            timeout=120
+            timeout=300
         )
         
         res.raise_for_status()
@@ -146,6 +181,49 @@ def refine_schedule(request: RefineRequest):
             "message": "AI Schedule refined successfully."
         }
         
+    except json.JSONDecodeError as e:
+        print(f"Failed to parse LLM JSON: {e}")
+        raise HTTPException(status_code=500, detail="AI output could not be parsed as valid JSON.")
+    except Exception as e:
+        print(f"Ollama/Pydantic Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/generate-mitigation", response_model=MitigationPlan)
+def generate_mitigation(request: MitigationRequest):
+    # Reload config to pick up new Ngrok URL if it changed
+    load_dotenv(dotenv_path)
+    current_colab_url = os.getenv("COLAB_JUDGE_URL", "http://localhost:8000").strip().rstrip('/')
+
+    print(f"Received mitigation request for {request.delayed_task_name}...")
+    try:
+        print(f"Contacting remote Colab FastAPI via {current_colab_url}/api/ai/generate-mitigation...")
+        
+        headers = {
+            "ngrok-skip-browser-warning": "69420",
+            "Content-Type": "application/json"
+        }
+        
+        res = requests.post(
+            f"{current_colab_url}/api/ai/generate-mitigation",
+            headers=headers,
+            json=request.model_dump(),
+            timeout=300
+        )
+        
+        res.raise_for_status()
+        raw_content = res.json()
+        
+        parsed_plan = MitigationPlan.model_validate(raw_content)
+        print("Colab FastAPI mitigation response successfully parsed into Pydantic models.")
+        
+        return parsed_plan
+        
+    except requests.exceptions.Timeout:
+        print("Error: The request to Colab timed out after 300 seconds.")
+        raise HTTPException(status_code=504, detail="AI mitigation generation timed out.")
+    except requests.exceptions.HTTPError as e:
+         print(f"Colab Endpoint Error: {e}")
+         raise HTTPException(status_code=500, detail=f"Colab returned an error")
     except json.JSONDecodeError as e:
         print(f"Failed to parse LLM JSON: {e}")
         raise HTTPException(status_code=500, detail="AI output could not be parsed as valid JSON.")

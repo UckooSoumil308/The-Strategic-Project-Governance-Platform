@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 
 // ── Impact-relevant fields (trigger recalc when these change) ────
 // Adding Gantt ecosystem fields to ensure recalculations include timeline shifts
-const IMPACT_FIELDS = ["stage", "date", "duration", "dependencies", "predecessors", "successors", "leadTime", "lagTime", "isTrashed"];
+const IMPACT_FIELDS = ["stage", "date", "startDate", "endDate", "duration", "dependencies", "predecessors", "successors", "leadTime", "lagTime", "isTrashed"];
 
 const taskSchema = new Schema(
     {
@@ -16,7 +16,7 @@ const taskSchema = new Schema(
         stage: {
             type: String,
             default: "todo",
-            enum: ["todo", "in progress", "completed"],
+            enum: ["todo", "in progress", "completed", "requires_resolution", "archived"],
         },
         activities: [
             {
@@ -51,6 +51,8 @@ const taskSchema = new Schema(
         links: [String],
         team: [{ type: Schema.Types.ObjectId, ref: "User" }],
         isTrashed: { type: Boolean, default: false },
+        startDate: { type: Date },
+        endDate: { type: Date },
         duration: { type: Number, default: 1 },
         dependencies: [{ type: Schema.Types.ObjectId, ref: "Task" }], // Generic dependencies (legacy)
         predecessors: [{ type: Schema.Types.ObjectId, ref: "Task" }], // Explicit Finish-to-Start predecessors
@@ -65,6 +67,7 @@ const taskSchema = new Schema(
         },
         isMilestone: { type: Boolean, default: false },
         isEpic: { type: Boolean, default: false },
+        isRescueTask: { type: Boolean, default: false },
         costPerDay: { type: Number, default: 0 },
         governanceStatus: {
             type: String,

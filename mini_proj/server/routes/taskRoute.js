@@ -11,13 +11,16 @@ import {
     getTasks,
     governanceStats,
     postTaskActivity,
-    reviewGovernanceTask,
     trashTask,
     updateSubTaskStage,
     updateTask,
     updateTaskStage,
+    approveQuarantinedTask,
+    applyMitigationPlan,
+    reviewGovernanceTask,
 } from "../controllers/taskController.js";
 import { isAdminRoute, protectRoute } from "../middleware/authMiddleware.js";
+import { verifyN8nRequest } from "../middleware/n8nAuth.js";
 
 const router = express.Router();
 
@@ -55,5 +58,9 @@ router.delete(
     isAdminRoute,
     deleteRestoreTask
 );
+
+// n8n Inbound Route
+router.patch("/apply-mitigation", verifyN8nRequest, applyMitigationPlan);
+router.patch("/:id/approve", verifyN8nRequest, approveQuarantinedTask);
 
 export default router;

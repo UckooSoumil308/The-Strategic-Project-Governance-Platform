@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const TIMEOUT_MS = 30000; // 30s timeout to allow for LLM processing
+const TIMEOUT_MS = 60000; // 60s timeout to allow for LLM processing
 
 // Default project OKRs — used when no project-specific OKRs are configured
 const DEFAULT_PROJECT_OKRS = `

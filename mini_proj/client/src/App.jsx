@@ -12,6 +12,8 @@ import Trash from './pages/Trash';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import GovernanceReview from './pages/GovernanceReview';
+import AgentTower from './pages/AgentTower';
+import ResolutionCenter from './pages/ResolutionCenter';
 import { useRef } from 'react';
 import { setOpenSidebar } from './redux/slices/authSlice';
 import { Transition } from '@headlessui/react';
@@ -19,13 +21,16 @@ import clsx from "clsx";
 import { Fragment } from 'react';
 import { IoClose } from 'react-icons/io5';
 function Layout() {
-  const { user } = useSelector((state) => state.auth);
+  const { user, isSidebarMinimized } = useSelector((state) => state.auth);
 
   const location = useLocation();
 
   return user ? (
     <div className='w-full h-screen flex flex-col md:flex-row'>
-      <div className='w-1/4 h-screen bg-white sticky top-0 hidden md:block'>
+      <div className={clsx(
+        "h-screen bg-white sticky top-0 hidden md:flex flex-col transition-all duration-300 border-r border-gray-200",
+        isSidebarMinimized ? "w-20 items-center" : "w-64 2xl:w-72"
+      )}>
         <Sidebar />
       </div>
 
@@ -110,6 +115,8 @@ function App() {
           <Route path='/task/:id' element={<TaskDetails />} />
           <Route path='/impact-analysis' element={<ImpactAnalysis />} />
           <Route path='/governance-review' element={<GovernanceReview />} />
+          <Route path='/agent-tower' element={<AgentTower />} />
+          <Route path='/resolution-center' element={<ResolutionCenter />} />
         </Route>
 
         <Route path='/log-in' element={<Login />} />

@@ -6,6 +6,7 @@ const initialState = {
         : null,
 
     isSidebarOpen: false,
+    isSidebarMinimized: false,
 };
 
 const authSlice = createSlice({
@@ -23,9 +24,12 @@ const authSlice = createSlice({
         setOpenSidebar: (state, action) => {
             state.isSidebarOpen = action.payload;
         },
+        toggleSidebar: (state, action) => {
+            state.isSidebarMinimized = action.payload !== undefined ? action.payload : !state.isSidebarMinimized;
+        },
     },
 });
 
-export const { setCredentials, logout, setOpenSidebar } = authSlice.actions;
+export const { setCredentials, logout, setOpenSidebar, toggleSidebar } = authSlice.actions;
 
 export default authSlice.reducer;

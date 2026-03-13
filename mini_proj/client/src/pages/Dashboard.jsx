@@ -17,7 +17,6 @@ import UserInfo from "../components/UserInfo";
 import Loading from "../components/Loader";
 import { useGetDasboardStatsQuery } from "../redux/slices/api/taskApiSlice";
 
-
 const TaskTable = ({ tasks }) => {
     const ICONS = {
         high: <MdKeyboardDoubleArrowUp />,
