@@ -1,4 +1,4 @@
-# The Strategic Project Governance Platform (Cheating Surveillance System)
+# The Strategic Project Governance Platform 
 
 A comprehensive full-stack application built to manage tasks, organizations, and team performance with integrated AI governance and strategic surveillance features. Utilizing the MERN stack with an enhanced Python/FastAPI AI microservice and n8n webhook pipelines, this platform actively evaluates task drift and automates project schedule cascading.
 
